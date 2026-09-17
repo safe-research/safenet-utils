@@ -7,7 +7,8 @@ helpers.
 This repo is being built up incrementally; packages are added as they're needed rather than scaffolded upfront.
 Expect (non-exhaustive, added over time):
 
-- **Contracts** — Governance/periphery contracts and deployment scripts (Solidity & Foundry)
+- **[Governance contracts](./governance/contracts)** — Governance/periphery contracts, e.g. veto/guardian modules
+  (Solidity & Foundry)
 - **Examples** — Scripts for interacting with Safenet-secured Safes (TypeScript & npm)
 
 ## Developing

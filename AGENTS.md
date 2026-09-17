@@ -7,8 +7,9 @@ the core protocol's release cadence.
 
 ## Architecture
 
-The repo is being built up incrementally — packages (e.g. `contracts/` for Solidity/Foundry, `examples/` for
-TypeScript scripts) are scaffolded as they're needed rather than upfront. When adding a new package:
+The repo is being built up incrementally — packages (e.g. `governance/contracts/` for Solidity/Foundry,
+`examples/` for TypeScript scripts) are scaffolded as they're needed rather than upfront. When adding a new
+package:
 
 - Wire its build/lint/test commands into the root [Justfile](./Justfile) as recipes.
 - If it references Safenet's own contracts/interfaces, prefer depending on
