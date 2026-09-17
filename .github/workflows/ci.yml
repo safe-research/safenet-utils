@@ -1,0 +1,17 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: safe-research/safenet/.github/actions/install-just@8a0f9a364aef14628bb797d3eab7c52f9fa457b0
+
+      - run: just check

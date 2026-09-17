@@ -1,0 +1,13 @@
+.DS_Store
+.env
+.env.*
+!.env.sample
+!.env.*.sample
+build/
+cache/
+coverage-report.md
+coverage/
+dist/
+foundry.lock
+lcov.info
+node_modules/
