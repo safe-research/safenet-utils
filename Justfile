@@ -9,10 +9,20 @@ prettier := "npm exec -y -- prettier@3.9.6"
 default:
     @just --list
 
-# Lint/format-check the repository's Markdown documentation.
+# Build every buildable package.
+build:
+    (cd governance/contracts && forge build --force)
+
+# Lint/format-check every package and the repository's Markdown documentation.
 check:
+    (cd governance/contracts && forge fmt --check && forge lint --deny notes)
     {{prettier}} --check "**/*.md"
 
 # Auto-fix formatting issues.
 fix:
+    (cd governance/contracts && forge fmt)
     {{prettier}} --write "**/*.md"
+
+# Run every package's tests.
+test:
+    (cd governance/contracts && forge test -vvv)
