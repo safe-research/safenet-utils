@@ -18,6 +18,7 @@ Expect (non-exhaustive, added over time):
 - [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), used to run Prettier for Markdown
   formatting
 - [Just](https://github.com/casey/just), the command runner used to invoke every command below
+- [Foundry](https://getfoundry.sh), used to build, lint, format and test the [governance contracts](./governance/contracts)
 
 ### Just Commands
 

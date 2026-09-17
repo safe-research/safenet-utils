@@ -26,3 +26,7 @@ fix:
 # Run every package's tests.
 test:
     (cd governance/contracts && forge test -vvv)
+
+# Deploy the Reality Veto Module. See governance/contracts/script/README.md for the operator runbook.
+contracts-deploy-reality-veto *args:
+    (cd governance/contracts && forge script DeployRealityVetoModuleScript {{args}})
