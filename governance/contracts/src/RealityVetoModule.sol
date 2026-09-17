@@ -12,6 +12,8 @@ import {Enum, ISafe} from "@/interfaces/ISafe.sol";
  *      change, and `vetoProposal` performs no check beyond the caller. A module bypasses owner signatures,
  *      the threshold and the transaction guard, so this contract's own access control is the whole security
  *      boundary.
+ *
+ *      See `script/README.md` for the deployment and operations runbook.
  */
 contract RealityVetoModule {
     /// @notice The Safe whose authority this module borrows.
