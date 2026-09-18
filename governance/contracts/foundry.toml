@@ -5,5 +5,19 @@ cache_path = "build/cache"
 broadcast = "build/broadcast"
 solc_version = "0.8.30"
 
-remappings = ["@/=src/", "@script/=script/", "@test/=test/", "@forge-std/=lib/forge-std/src/"]
+remappings = [
+  "@/=src/",
+  "@script/=script/",
+  "@test/=test/",
+  "@forge-std/=lib/forge-std/src/",
+  # Pinned to Safe 1.3.0: the version zodiac v1.0.1 and zodiac-module-reality v2.0.0 (mastercopy
+  # 0x4e35da39fa5893a70a40ce964f993d891e607cc0) were written against and hardcode imports under the old
+  # `@gnosis.pm/safe-contracts` package name. Our own test code imports it under that same historic name
+  # too, rather than aliasing it to a second name here, so it resolves the same way it would if these
+  # contracts were built under e.g. hardhat's npm-package resolution. Nothing in src/ uses it.
+  "@gnosis.pm/safe-contracts/=lib/safe-smart-account/",
+  "@reality-module/=lib/zodiac-module-reality/contracts/",
+  "@gnosis.pm/zodiac/=lib/zodiac/",
+  "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+]
 auto_detect_remappings = false
