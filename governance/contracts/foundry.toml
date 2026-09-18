@@ -5,5 +5,20 @@ cache_path = "build/cache"
 broadcast = "build/broadcast"
 solc_version = "0.8.30"
 
-remappings = ["@/=src/", "@script/=script/", "@test/=test/", "@forge-std/=lib/forge-std/src/"]
+remappings = [
+  "@/=src/",
+  "@script/=script/",
+  "@test/=test/",
+  "@forge-std/=lib/forge-std/src/",
+  # Pinned to Safe 1.3.0: the version zodiac v1.0.1 and zodiac-module-reality v2.0.0 (mastercopy
+  # 0x4e35da39fa5893a70a40ce964f993d891e607cc0) were written against and hardcode imports of under the
+  # old `@gnosis.pm/safe-contracts` package name. One checkout, addressed under both names, so
+  # `@gnosis.pm/safe-contracts/contracts/common/Enum.sol` etc. resolve to real files directly, with no
+  # vendored or redirected copies. Nothing in src/ uses either remapping.
+  "@safe/=lib/safe-smart-account/contracts/",
+  "@gnosis.pm/safe-contracts/=lib/safe-smart-account/",
+  "@reality-module/=lib/zodiac-module-reality/contracts/",
+  "@gnosis.pm/zodiac/=lib/zodiac/",
+  "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+]
 auto_detect_remappings = false
