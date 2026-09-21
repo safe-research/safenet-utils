@@ -12,6 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          # We fix the foundry version because of a formatting bug introduced
+          # in version 1.7.0.
+          # See <https://github.com/foundry-rs/foundry/issues/13362>
+          version: v1.5.1
+
       - uses: safe-research/safenet/.github/actions/install-just@8a0f9a364aef14628bb797d3eab7c52f9fa457b0
 
       - run: just check
