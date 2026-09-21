@@ -5,5 +5,5 @@ cache_path = "build/cache"
 broadcast = "build/broadcast"
 solc_version = "0.8.30"
 
-remappings = ["@/=src/", "@script/=script/", "@forge-std/=lib/forge-std/src/"]
+remappings = ["@/=src/", "@script/=script/", "@test/=test/", "@forge-std/=lib/forge-std/src/"]
 auto_detect_remappings = false
