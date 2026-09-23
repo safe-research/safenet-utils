@@ -4,6 +4,11 @@ Safenet Utils is a periphery repo for [Safenet](https://github.com/safe-research
 
 ## Architecture
 
+Current packages:
+
+- `governance/contracts/` — governance/periphery Solidity contracts and deployment scripts (Foundry).
+- `governance/apps/safenet-arbitration/` — Safe App (Vite, React, TypeScript, Tailwind CSS) for the Safe holding a `SentinelOracle`'s `ARBITRATOR` role. Talks to chain state only through `@safe-global/safe-apps-sdk`; npm dependencies are installed with `just deps`.
+
 The repo is being built up incrementally — packages (e.g. `governance/contracts/` for Solidity/Foundry, `examples/` for TypeScript scripts) are scaffolded as they're needed rather than upfront. When adding a new package:
 
 - Wire its build/lint/test commands into the root [Justfile](./Justfile) as recipes.
