@@ -4,6 +4,7 @@ import { type ZodType, z } from "zod"
 export type OracleConfig = {
   chainId: number
   oracleAddress: Address
+  logBlockRange: number
 }
 
 // Vite reads a `VITE_X=` line in `.env` as `""`, which `.default()` doesn't cover and `z.coerce` would turn into `0`,
@@ -21,6 +22,7 @@ const checkedAddressSchema = z
 const envSchema = z.object({
   VITE_CHAIN_ID: emptyToDefault(z.coerce.number().int().nonnegative(), "100"),
   VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0x544F12bAd6FF72564abBc7eA6494A2a4BdD0DDD0"),
+  VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
 })
 
 export function parseConfig(env: Record<string, unknown>): OracleConfig {
@@ -31,6 +33,7 @@ export function parseConfig(env: Record<string, unknown>): OracleConfig {
   return {
     chainId: result.data.VITE_CHAIN_ID,
     oracleAddress: result.data.VITE_SENTINEL_ORACLE_ADDRESS,
+    logBlockRange: result.data.VITE_LOG_BLOCK_RANGE,
   }
 }
 
