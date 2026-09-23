@@ -1,7 +1,9 @@
-import { useSafeAppsSdk } from "@/safe/useSafeAppsSdk"
+import { config } from "@/config/oracle"
+import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
+import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
 
 function App() {
-  const { connection } = useSafeAppsSdk()
+  const { sdk, connection } = useSafeAppsSdk()
 
   return (
     <main className="mx-auto max-w-4xl p-6 font-sans text-gray-900">
@@ -13,12 +15,23 @@ function App() {
         </p>
       )}
       {connection.status === "connected" && (
-        <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
-          <dt className="text-gray-500">Safe</dt>
-          <dd className="font-mono break-all">{connection.safe.safeAddress}</dd>
-          <dt className="text-gray-500">Chain ID</dt>
-          <dd className="font-mono">{connection.safe.chainId}</dd>
-        </dl>
+        <>
+          <dl className="mb-6 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
+            <dt className="text-gray-500">Safe</dt>
+            <dd className="font-mono break-all">{connection.safe.safeAddress}</dd>
+            <dt className="text-gray-500">Chain ID</dt>
+            <dd className="font-mono">{connection.safe.chainId}</dd>
+            <dt className="text-gray-500">Sentinel oracle</dt>
+            <dd className="font-mono break-all">{config.oracleAddress}</dd>
+          </dl>
+          {connection.safe.chainId === config.chainId ? (
+            <ArbitrationRequestList sdk={sdk} config={config} />
+          ) : (
+            <p className="text-red-600">
+              This app is configured for the sentinel oracle on chain {config.chainId}. Switch to a Safe on that chain.
+            </p>
+          )}
+        </>
       )}
     </main>
   )

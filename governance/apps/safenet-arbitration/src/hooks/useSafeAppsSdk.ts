@@ -1,7 +1,7 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { SafeInfo } from "@safe-global/safe-apps-sdk"
 import { useEffect, useState } from "react"
-import { sdk as defaultSdk } from "./sdk"
+import { sdk as defaultSdk } from "@/lib/safe"
 
 // Outside of Safe{Wallet}, `safe.getInfo()` never resolves (there is no parent frame to answer it), so give up after
 // this long and report the app as not running inside a Safe.

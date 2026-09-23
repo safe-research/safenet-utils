@@ -6,12 +6,23 @@ requests and queue `resolveDispute`/`markOutOfScope` rulings, which the Safe's o
 through Safe{Wallet}'s normal multisig flow.
 
 > [!NOTE]
-> Work in progress: currently only an app shell that connects to Safe{Wallet} and shows the connected Safe. See
+> Work in progress: currently lists `FROZEN` requests awaiting arbitration, but cannot yet queue rulings. See
 > [the epic plan](../../../epics/2026_09_23_arbitration_safe_app.md).
 
 The app talks to chain state exclusively through `@safe-global/safe-apps-sdk`, so it has no wallet connector or
 RPC configuration of its own. It only accepts SDK messages from `https://app.safe.global` (see
-[`src/safe/sdk.ts`](./src/safe/sdk.ts)).
+[`src/lib/safe.ts`](./src/lib/safe.ts)).
+
+## Configuration
+
+The `SentinelOracle` to operate on is fixed at build time through Vite environment variables, documented in
+[`.env.sample`](./.env.sample). Unset or empty variables default to the current Gnosis Chain testnet deployment; copy
+the file to `.env` to point the app at a different deployment.
+
+Requests awaiting arbitration are found by querying the oracle's dispute events (`DisputeTriggered` minus
+`DisputeResolved`/`DisputeOutOfScope`/`ArbitrationTimedOut`), then confirming each candidate is still `FROZEN` with
+`getRequest`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest
+dispute first; **Load older** extends the search one page further back.
 
 ## Developing
 

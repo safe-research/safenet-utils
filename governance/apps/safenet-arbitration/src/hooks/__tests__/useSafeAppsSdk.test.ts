@@ -2,7 +2,7 @@ import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { SafeInfo } from "@safe-global/safe-apps-sdk"
 import { renderHook, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { useSafeAppsSdk } from "./useSafeAppsSdk"
+import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
 
 const SAFE_INFO: SafeInfo = {
   safeAddress: "0x1111111111111111111111111111111111111111",
