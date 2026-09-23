@@ -1,15 +1,19 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
+import { Fragment, useState } from "react"
+import type { Hex } from "viem"
+import { RequestDetails } from "@/components/RequestDetails"
 import type { OracleConfig } from "@/config/oracle"
 import { useArbitrationRequests } from "@/hooks/useArbitrationRequests"
+import { shorten } from "@/lib/format"
 
-function shorten(hex: string): string {
-  return `${hex.slice(0, 6)}…${hex.slice(-4)}`
-}
+const COLUMN_COUNT = 4
 
 export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; config: OracleConfig }) {
   const { data, error, isPending, isFetching, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useArbitrationRequests(sdk, config)
   const requests = data?.requests
+  // One request is expanded at a time, so its details and actions sit right below its row.
+  const [expanded, setExpanded] = useState<Hex>()
 
   return (
     <section>
@@ -36,24 +40,52 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
               <th className="py-2 font-normal">Request ID</th>
               <th className="py-2 font-normal">Sponsor</th>
               <th className="py-2 font-normal">Approve / Deny</th>
-              <th className="py-2 font-normal">Deadline</th>
+              <th className="py-2 text-right font-normal">Deadline</th>
             </tr>
           </thead>
           <tbody>
-            {requests.map((request) => (
-              <tr key={request.requestId} className="border-b border-gray-100">
-                <td className="py-2 font-mono" title={request.requestId}>
-                  {shorten(request.requestId)}
-                </td>
-                <td className="py-2 font-mono" title={request.sponsor}>
-                  {shorten(request.sponsor)}
-                </td>
-                <td className="py-2">
-                  {request.approveCount} / {request.denyCount}
-                </td>
-                <td className="py-2">block {request.arbitrationDeadline.toString()}</td>
-              </tr>
-            ))}
+            {requests.map((request) => {
+              const isExpanded = expanded === request.requestId
+              const detailsId = `request-details-${request.requestId}`
+              const toggle = () => setExpanded(isExpanded ? undefined : request.requestId)
+              return (
+                <Fragment key={request.requestId}>
+                  <tr
+                    onClick={toggle}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        toggle()
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    aria-controls={isExpanded ? detailsId : undefined}
+                    className={`cursor-pointer hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-gray-400 ${
+                      isExpanded ? "bg-gray-50" : "border-b border-gray-100"
+                    }`}
+                  >
+                    <td className="py-2 font-mono" title={request.requestId}>
+                      {shorten(request.requestId)}
+                    </td>
+                    <td className="py-2 font-mono" title={request.sponsor}>
+                      {shorten(request.sponsor)}
+                    </td>
+                    <td className="py-2">
+                      {request.approveCount} / {request.denyCount}
+                    </td>
+                    <td className="py-2 text-right">block {request.arbitrationDeadline.toString()}</td>
+                  </tr>
+                  {isExpanded && (
+                    <tr id={detailsId} className="border-b border-gray-100 bg-gray-50">
+                      <td colSpan={COLUMN_COUNT} className="px-3 pb-3">
+                        <RequestDetails sdk={sdk} config={config} request={request} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
       )}

@@ -42,7 +42,7 @@ export function disputeLog(eventName: ContractEventName<typeof sentinelOracleAbi
 }
 
 // A Safe Apps SDK stub on a chain at `latestBlock`: `getPastLogs` returns the `logs` within the requested block range
-// and `eth_call` answers `getRequest` from `requests`.
+// and `eth_call` answers `getRequest` from `requests`. `txs.send` accepts every proposed transaction.
 export function mockOracleSdk(
   logs: ReturnType<typeof disputeLog>[],
   requests: Record<Hex, RequestFixture>,
@@ -81,6 +81,7 @@ export function mockOracleSdk(
       },
     })
   })
-  const sdk = { eth: { getBlockByNumber, getPastLogs, call } } as unknown as SafeAppsSDK
-  return { sdk, getBlockByNumber, getPastLogs, call }
+  const send = vi.fn(async () => ({ safeTxHash: `0x${"ab".repeat(32)}` }))
+  const sdk = { eth: { getBlockByNumber, getPastLogs, call }, txs: { send } } as unknown as SafeAppsSDK
+  return { sdk, getBlockByNumber, getPastLogs, call, send }
 }
