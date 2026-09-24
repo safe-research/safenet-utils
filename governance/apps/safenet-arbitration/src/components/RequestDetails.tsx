@@ -1,11 +1,13 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import { useState } from "react"
+import { ProposalDetails } from "@/components/ProposalDetails"
 import { RulingForm } from "@/components/RulingForm"
 import type { OracleConfig } from "@/config/oracle"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
 import { RULING_LABELS, RULINGS, type Ruling } from "@/lib/rulings"
 
-// Expanded view of a single request awaiting arbitration, holding the actions the arbitrator can take on it.
+// Expanded view of a single request awaiting arbitration: the transaction under dispute and the actions the arbitrator
+// can take on it.
 export function RequestDetails({
   sdk,
   config,
@@ -19,6 +21,7 @@ export function RequestDetails({
 
   return (
     <div className="space-y-3">
+      <ProposalDetails sdk={sdk} config={config} request={request} />
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground">Rule:</span>
         {RULINGS.map((option) => (

@@ -46,6 +46,7 @@ describe("fetchArbitrationRequests", () => {
         [requestId(3)]: {
           state: RequestState.FROZEN,
           sponsor: "0x3333333333333333333333333333333333333333",
+          commitDeadline: 77n,
           approve: 1,
           deny: 4,
           deadline: 123n,
@@ -59,6 +60,7 @@ describe("fetchArbitrationRequests", () => {
       {
         requestId: requestId(3),
         sponsor: "0x3333333333333333333333333333333333333333",
+        commitDeadline: 77n,
         approveCount: 1,
         denyCount: 4,
         arbitrationDeadline: 123n,
@@ -66,6 +68,7 @@ describe("fetchArbitrationRequests", () => {
       {
         requestId: requestId(1),
         sponsor: "0x2222222222222222222222222222222222222222",
+        commitDeadline: 11n,
         approveCount: 3,
         denyCount: 2,
         arbitrationDeadline: 500n,
