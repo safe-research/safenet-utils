@@ -29,22 +29,22 @@ export function RulingForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded border border-gray-200 bg-white p-4">
+    <form onSubmit={onSubmit} className="rounded border border-border-subtle bg-surface p-4">
       <h3 className="mb-3 font-semibold">{RULING_LABELS[ruling]} ruling</h3>
       <label className="mb-3 block">
-        <span className="mb-1 block text-sm text-gray-500">Rationale (recorded on-chain)</span>
+        <span className="mb-1 block text-sm text-muted-foreground">Rationale (recorded on-chain)</span>
         <textarea
           value={context}
           onChange={(event) => setContext(event.target.value)}
           disabled={isPending || isSuccess}
           rows={3}
-          className="w-full rounded border border-gray-300 p-2 text-sm disabled:bg-gray-50"
+          className="w-full rounded border border-border p-2 text-sm disabled:bg-subtle"
         />
       </label>
-      {error && <p className="mb-3 text-sm text-red-600">Failed to submit ruling: {error.message}</p>}
+      {error && <p className="mb-3 text-sm text-danger">Failed to submit ruling: {error.message}</p>}
       {isSuccess ? (
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-success">
             Ruling queued in {"Safe{Wallet}"} as{" "}
             <span className="font-mono break-all" title={data.safeTxHash}>
               {shorten(data.safeTxHash)}
@@ -54,7 +54,7 @@ export function RulingForm({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+            className="rounded border border-border px-3 py-1 text-sm hover:bg-subtle"
           >
             Close
           </button>
@@ -65,14 +65,14 @@ export function RulingForm({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+            className="rounded border border-border px-3 py-1 text-sm hover:bg-subtle disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending || rationale === ""}
-            className="rounded bg-gray-900 px-3 py-1 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+            className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
           >
             {isPending ? "Waiting for Safe{Wallet}…" : "Submit to Safe"}
           </button>

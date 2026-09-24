@@ -23,19 +23,19 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+          className="rounded border border-border px-3 py-1 text-sm hover:bg-subtle disabled:opacity-50"
         >
           Refresh
         </button>
       </div>
-      {isPending && <p className="text-gray-500">Loading arbitration requests…</p>}
-      {error && <p className="text-red-600">Failed to load arbitration requests: {error.message}</p>}
+      {isPending && <p className="text-muted-foreground">Loading arbitration requests…</p>}
+      {error && <p className="text-danger">Failed to load arbitration requests: {error.message}</p>}
       {requests && requests.length === 0 && (
-        <p className="text-gray-500">No requests are awaiting arbitration in the searched blocks.</p>
+        <p className="text-muted-foreground">No requests are awaiting arbitration in the searched blocks.</p>
       )}
       {requests && requests.length > 0 && (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-200 text-gray-500">
+          <thead className="border-b border-border-subtle text-muted-foreground">
             <tr>
               <th className="py-2 font-normal">Request ID</th>
               <th className="py-2 font-normal">Sponsor</th>
@@ -61,8 +61,8 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
                     tabIndex={0}
                     aria-expanded={isExpanded}
                     aria-controls={isExpanded ? detailsId : undefined}
-                    className={`cursor-pointer hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-gray-400 ${
-                      isExpanded ? "bg-gray-50" : "border-b border-gray-100"
+                    className={`cursor-pointer hover:bg-subtle focus-visible:outline-2 focus-visible:outline-focus ${
+                      isExpanded ? "bg-subtle" : "border-b border-divider"
                     }`}
                   >
                     <td className="py-2 font-mono" title={request.requestId}>
@@ -77,7 +77,7 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
                     <td className="py-2 text-right">block {request.arbitrationDeadline.toString()}</td>
                   </tr>
                   {isExpanded && (
-                    <tr id={detailsId} className="border-b border-gray-100 bg-gray-50">
+                    <tr id={detailsId} className="border-b border-divider bg-subtle">
                       <td colSpan={COLUMN_COUNT} className="px-3 pb-3">
                         <RequestDetails sdk={sdk} config={config} request={request} />
                       </td>
@@ -90,14 +90,14 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
         </table>
       )}
       {data && (
-        <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+        <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <span>Searched back to block {data.searchedFromBlock}</span>
           {hasNextPage && (
             <button
               type="button"
               onClick={() => fetchNextPage()}
               disabled={isFetching}
-              className="rounded border border-gray-300 px-3 py-1 text-gray-900 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded border border-border px-3 py-1 text-foreground hover:bg-subtle disabled:opacity-50"
             >
               {isFetchingNextPage ? "Loading…" : "Load older"}
             </button>
