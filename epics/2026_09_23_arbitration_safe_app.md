@@ -22,7 +22,7 @@ Steps, each a separate PR:
 1. Scaffold the Vite/React/TypeScript app shell with Safe Apps SDK wiring and repo build/lint/test integration, no request logic yet.
 2. Read and list `FROZEN` (arbitrated) requests from the configured `SentinelOracle`.
 3. Add the ruling ("vote") actions that queue a `resolveDispute` or `markOutOfScope` transaction via the SDK.
-4. Configure GitHub Pages deployment.
+4. UI/UX improvements (dark mode, pointer cursors). Deployment is handled outside this repo via Cloudflare.
 5. Remove this plan once the epic is complete.
 
 ---
@@ -133,12 +133,12 @@ No routing needed for v1 (single page + inline form); no wireframe beyond the ab
 - Pending/submitted/error UI state around the send call (the app does not need to poll for execution — that is Safe{Wallet}'s job — but should show that a transaction was successfully queued).
 - Unit tests for calldata encoding.
 
-### Phase 4 — GitHub Pages deployment (separate PR, depends on Phase 1; can run in parallel with Phases 2–3)
+### Phase 4 — UI/UX improvements (separate PR, depends on Phase 3)
 
-- Vite `base` config for serving from a GitHub Pages project subpath, and confirm the built app still works as a Safe App from that path (Safe Apps require HTTPS hosting; GitHub Pages satisfies that).
-- `.github/workflows/` addition that builds `governance/apps/safenet-arbitration` and publishes `dist/` via `actions/upload-pages-artifact` + `actions/deploy-pages` on push to `main` — a separate workflow/job from the existing `ci.yml` `check` job, which stays PR-triggered and doesn't deploy anything.
-- One-time manual step (not part of this PR's code): a repo admin switches the repository's GitHub Pages source to "GitHub Actions" in repo settings.
-- Record the resulting Pages URL in the package `README.md` — needed to add the app as a custom Safe App in Safe{Wallet}.
+Deployment is no longer part of this epic: the app is deployed via Cloudflare, set up outside this repo.
+
+- Dark/light mode. The Safe Apps SDK doesn't expose Safe{Wallet}'s theme, so the app follows the system `prefers-color-scheme`, which matches Safe{Wallet}'s default "system" theme setting. Colors are defined once as semantic Tailwind theme tokens in `src/index.css`, with light and dark values side by side.
+- Pointer cursor on every enabled button.
 
 ### Phase 5 — Remove this plan (separate PR, depends on Phase 4)
 

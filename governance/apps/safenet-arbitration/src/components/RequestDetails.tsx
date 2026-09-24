@@ -20,14 +20,14 @@ export function RequestDetails({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-gray-500">Rule:</span>
+        <span className="text-muted-foreground">Rule:</span>
         {RULINGS.map((option) => (
           <button
             key={option}
             type="button"
             onClick={() => setRuling(option)}
             aria-pressed={ruling === option}
-            className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50 aria-pressed:bg-gray-200"
+            className="rounded border border-border px-2 py-0.5 hover:bg-subtle aria-pressed:bg-selected"
           >
             {RULING_LABELS[option]}
           </button>
