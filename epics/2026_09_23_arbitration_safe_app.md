@@ -15,7 +15,7 @@ This epic adds a minimal [Safe App](https://github.com/safe-global/safe-apps-sdk
 - Lists requests currently `FROZEN` on the configured `SentinelOracle` (the "arbitrated proposals": disputed, not yet ruled on or timed out), each with its sponsor, approve/deny sentinel counts, and arbitration deadline.
 - Lets an owner queue a ruling transaction for one of them — `resolveDispute(requestId, approveWins, context)` (Approve or Deny) or `markOutOfScope(requestId, context)` (Decline to rule), each with a short rationale — which Safe{Wallet}'s own UI then collects confirmations for and executes; that confirmation flow is the "voting".
 
-The app talks to chain state exclusively through `@safe-global/safe-apps-sdk` (`sdk.eth.getPastLogs` / `sdk.eth.call` for reads, `sdk.txs.send` for the ruling), so it needs no separate wallet connector or RPC provider — deliberately smaller than [`safenet-staking-ui`](https://github.com/safe-fndn/safenet-staking-ui), which additionally supports external wallets and on-chain writes outside of Safe{Wallet}. Style and repo layout otherwise follow that project's conventions (Vite, TypeScript, Tailwind CSS, `src/` organized by feature).
+The app talks to chain state exclusively through `@safe-global/safe-apps-sdk` (`sdk.eth.getPastLogs` / `sdk.eth.call` for reads, `sdk.txs.send` for the ruling), so it needs no separate wallet connector or RPC provider — deliberately smaller than [`safenet-staking-ui`](https://github.com/safe-fndn/safenet-staking-ui), which additionally supports external wallets and on-chain writes outside of Safe{Wallet}. Style and repo layout otherwise follow that project's conventions (Vite, TypeScript, Tailwind CSS, `src/` organized by type: `abi/`, `components/`, `config/`, `hooks/`, `lib/`, with tests in `__tests__/` directories).
 
 Steps, each a separate PR:
 
@@ -87,14 +87,18 @@ No routing needed for v1 (single page + inline form); no wireframe beyond the ab
 
 - **Package**: `governance/apps/safenet-arbitration/`, Vite + React + TypeScript, Tailwind CSS.
 - **SDK**: `@safe-global/safe-apps-sdk` (no `safe-apps-react-sdk` needed for a single-page app of this size — a thin custom hook around the plain SDK is enough).
+- **Data fetching**: `@tanstack/react-query` (as in `safenet-staking-ui`) around plain async functions that call the SDK, for loading/error/refetch state and caching — without wagmi, since there is no wallet connector or RPC transport to configure.
+- **Config validation**: `zod` schema over the Vite environment variables, failing loudly on invalid build config.
 - **ABI encoding**: `viem`, used only for `parseAbiItem`/`encodeFunctionData`/`decodeFunctionResult` against a small hand-written set of fragments (see Architecture Decision) — no `PublicClient`/`WalletClient`.
 - **Safe App manifest**: `public/manifest.json` (`name`, `description`, `iconPath`) per Safe Apps requirements, so the app can be added to Safe{Wallet} as a custom app.
 - **Config** (build variables, `.env`/`.env.sample` — can be made configurable per environment later):
   - `VITE_CHAIN_ID` — `100` (Gnosis Chain) by default, matching the current testnet deployment.
   - `VITE_SENTINEL_ORACLE_ADDRESS` — `0x544F12bAd6FF72564abBc7eA6494A2a4BdD0DDD0` by default (testnet `SentinelOracle`).
+  - `VITE_LOG_BLOCK_RANGE` — `10000` by default, the number of blocks searched for dispute logs per page.
 - **Reads**:
   - `DisputeTriggered(bytes32 indexed requestId, uint64 deadline)` logs via `sdk.eth.getPastLogs`, to enumerate requests that have ever been frozen.
   - `DisputeResolved`/`DisputeOutOfScope`/`ArbitrationTimedOut` logs (all indexed by `requestId`) via the same call, to drop requests that are no longer open.
+  - Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block; older pages are loaded on demand ("Load older"), so no single `eth_getLogs` call spans the whole chain. Requests are listed newest dispute first, so loading older pages only appends rows.
   - `getRequest(requestId)` via `sdk.eth.call`, to read the authoritative current `state`, sentinel counts, sponsor, and `arbitrationDeadline` for whatever's left after the above filter — logs establish which request IDs exist, `getRequest` establishes truth for each.
 - **Writes**: `sdk.txs.send({ txs: [{ to: VITE_SENTINEL_ORACLE_ADDRESS, value: '0', data: <calldata> }] })`, where `<calldata>` is either `resolveDispute(requestId, approveWins, context)` (Approve/Deny) or `markOutOfScope(requestId, context)` (Decline).
 - **Test cases** (Vitest):
@@ -116,10 +120,10 @@ No routing needed for v1 (single page + inline form); no wireframe beyond the ab
 
 ### Phase 2 — List arbitrated (frozen) requests (separate PR, depends on Phase 1)
 
-- `.env.sample` with `VITE_CHAIN_ID`/`VITE_SENTINEL_ORACLE_ADDRESS`.
+- `.env.sample` with `VITE_CHAIN_ID`/`VITE_SENTINEL_ORACLE_ADDRESS`/`VITE_LOG_BLOCK_RANGE`.
 - Hand-written `SentinelOracle` ABI fragments (`getRequest`, the four dispute events), pinned to the commit referenced in this plan.
 - Data-fetching module: `sdk.eth.getPastLogs` for the four dispute events, `sdk.eth.call` + `getRequest` per surviving request ID.
-- Request list UI component (table per the wireframe above) with loading/empty/error states.
+- Request list UI component (table per the wireframe above) with loading/empty/error states and "Load older" pagination.
 - Unit tests for list-derivation logic.
 
 ### Phase 3 — Ruling ("vote") actions (separate PR, depends on Phase 2)
