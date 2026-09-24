@@ -1,0 +1,5 @@
+{
+  "name": "Safenet Arbitration",
+  "description": "Rule on disputed Safenet SentinelOracle requests as the arbitrator Safe.",
+  "iconPath": "logo.svg"
+}

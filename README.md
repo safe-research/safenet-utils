@@ -5,13 +5,15 @@ Periphery tooling for [Safenet](https://github.com/safe-research/safenet) — go
 This repo is being built up incrementally; packages are added as they're needed rather than scaffolded upfront. Expect (non-exhaustive, added over time):
 
 - **[Governance contracts](./governance/contracts)** — Governance/periphery contracts, e.g. veto/guardian modules (Solidity & Foundry)
+- **[Governance contracts](./governance/contracts)** — Governance/periphery contracts, e.g. veto/guardian modules (Solidity & Foundry)
+- **[Arbitration Safe App](./governance/apps/safenet-arbitration)** — Safe App for the Safe holding a `SentinelOracle`'s `ARBITRATOR` role to rule on disputed requests (TypeScript, React & Vite)
 - **Examples** — Scripts for interacting with Safenet-secured Safes (TypeScript & npm)
 
 ## Developing
 
 ### Requirements
 
-- [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), used to run Prettier for Markdown formatting
+- [Node.js 24 and NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), used to run Prettier for Markdown formatting and to build, lint and test the [arbitration Safe App](./governance/apps/safenet-arbitration) (run `just deps` once to install its dependencies)
 - [Just](https://github.com/casey/just), the command runner used to invoke every command below
 - [Foundry](https://getfoundry.sh), used to build, lint, format and test the [governance contracts](./governance/contracts)
 

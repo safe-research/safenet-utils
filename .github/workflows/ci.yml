@@ -23,4 +23,12 @@ jobs:
 
       - uses: safe-research/safenet/.github/actions/install-just@8a0f9a364aef14628bb797d3eab7c52f9fa457b0
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: governance/apps/safenet-arbitration/package-lock.json
+
+      - run: just deps
+
       - run: just check
