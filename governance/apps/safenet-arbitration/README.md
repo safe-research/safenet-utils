@@ -1,13 +1,12 @@
 # Safenet Arbitration Safe App
 
 A [Safe App](https://github.com/safe-global/safe-apps-sdk) for the Safe that holds a Safenet `SentinelOracle`'s
-`ARBITRATOR` role. Loaded inside Safe{Wallet} while connected as that Safe, it will list disputed (`FROZEN`)
-requests and queue `resolveDispute`/`markOutOfScope` rulings, which the Safe's owners then confirm and execute
-through Safe{Wallet}'s normal multisig flow.
+`ARBITRATOR` role. Loaded inside Safe{Wallet} while connected as that Safe, it lists disputed (`FROZEN`) requests
+and queues `resolveDispute`/`markOutOfScope` rulings, which the Safe's owners then confirm and execute through
+Safe{Wallet}'s normal multisig flow.
 
 > [!NOTE]
-> Work in progress: currently lists `FROZEN` requests awaiting arbitration, but cannot yet queue rulings. See
-> [the epic plan](../../../epics/2026_09_23_arbitration_safe_app.md).
+> Work in progress: not yet deployed anywhere. See [the epic plan](../../../epics/2026_09_23_arbitration_safe_app.md).
 
 The app talks to chain state exclusively through `@safe-global/safe-apps-sdk`, so it has no wallet connector or
 RPC configuration of its own. It only accepts SDK messages from `https://app.safe.global` (see
@@ -23,6 +22,14 @@ Requests awaiting arbitration are found by querying the oracle's dispute events 
 `DisputeResolved`/`DisputeOutOfScope`/`ArbitrationTimedOut`), then confirming each candidate is still `FROZEN` with
 `getRequest`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest
 dispute first; **Load older** extends the search one page further back.
+
+## Ruling
+
+Clicking a listed request expands it, offering **Approve** / **Deny** (`resolveDispute`, siding with the approving or
+denying sentinels) and **Decline** (`markOutOfScope`, refusing to rule). Picking one asks for a rationale, recorded on-chain as the call's
+`context`, and **Submit to Safe** proposes the call as a Safe transaction. The app stops there: each owner's
+confirmation in Safe{Wallet}'s transaction queue is their vote, and the ruling takes effect once the transaction is
+executed. The request then drops off the list on the next refresh.
 
 ## Developing
 
