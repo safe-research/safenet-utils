@@ -8,6 +8,8 @@ export const sentinelOracleAbi = parseAbi([
   "struct Progress { uint8 state; uint96 fee; uint64 arbitrationDeadline; uint16 committedCount; uint16 revealedCount; uint16 approveSentinelCount; uint16 denySentinelCount; uint24 _padding; }",
   "struct Request { Terms terms; Progress progress; }",
   "function getRequest(bytes32 requestId) view returns (Request)",
+  "function PROPOSER() view returns (address)",
+  "function COMMIT_WINDOW() view returns (uint32)",
   "function resolveDispute(bytes32 requestId, bool approveWins, string context)",
   "function markOutOfScope(bytes32 requestId, string context)",
   "event DisputeTriggered(bytes32 indexed requestId, uint64 deadline)",

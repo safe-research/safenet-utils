@@ -23,6 +23,11 @@ Requests awaiting arbitration are found by querying the oracle's dispute events 
 `getRequest`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest
 dispute first; **Load older** extends the search one page further back.
 
+Expanding a request shows the Safe transaction it was posted for. `Consensus.proposeTransaction` (the oracle's
+`PROPOSER`) emits `TransactionProposed` in the block that posts the request, so that block is derived from the
+request's `commitDeadline` minus the oracle's `COMMIT_WINDOW`, and only that block is searched. A proposal is only shown
+if its recomputed attestation message equals the request ID.
+
 ## Ruling
 
 Clicking a listed request expands it, offering **Approve** / **Deny** (`resolveDispute`, siding with the approving or

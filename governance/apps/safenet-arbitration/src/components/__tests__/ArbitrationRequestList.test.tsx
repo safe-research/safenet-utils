@@ -2,7 +2,14 @@ import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import { encodeRuling } from "@/lib/rulings"
 import { RequestState } from "@/abi/sentinelOracleAbi"
-import { CONFIG, disputeLog, mockOracleSdk, requestId } from "@/__tests__/mock-sentinel-oracle"
+import {
+  CONFIG,
+  disputeLog,
+  mockOracleSdk,
+  proposalLog,
+  requestId,
+  SAFE_TRANSACTION,
+} from "@/__tests__/mock-sentinel-oracle"
 import { renderWithQueryClient } from "@/__tests__/render"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
 
@@ -123,6 +130,56 @@ describe("ArbitrationRequestList", () => {
       expect(screen.getByRole("button", { name: "Approve" })).toBeDefined()
       fireEvent.keyDown(row, { key: " " })
       expect(screen.queryByRole("button", { name: "Approve" })).toBeNull()
+    })
+  })
+
+  describe("proposed transaction", () => {
+    function details() {
+      return within(screen.getByRole("region", { name: "Proposed transaction" }))
+    }
+
+    it("shows the transaction the request was posted for", async () => {
+      const { id, log } = proposalLog()
+      const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", id), log], {
+        [id]: { state: RequestState.FROZEN },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+
+      fireEvent.click(await screen.findByTitle(id))
+
+      expect(await screen.findByRole("region", { name: "Proposed transaction" })).toBeDefined()
+      expect(details().getByText(SAFE_TRANSACTION.safe)).toBeDefined()
+      expect(details().getByText(SAFE_TRANSACTION.to)).toBeDefined()
+      expect(details().getByText("1234 wei")).toBeDefined()
+      expect(details().getByText("DelegateCall")).toBeDefined()
+      expect(details().getByText("0xdeadbeef")).toBeDefined()
+      expect(details().getByText("42")).toBeDefined()
+    })
+
+    it("says so when no matching proposal is found", async () => {
+      const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(1))], {
+        [requestId(1)]: { state: RequestState.FROZEN },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+
+      fireEvent.click(await screen.findByTitle(requestId(1)))
+
+      expect(await screen.findByText("No proposal matching this request was found.")).toBeDefined()
+      // Rulings don't depend on the proposal details.
+      expect(screen.getByRole("button", { name: "Approve" })).toBeDefined()
+    })
+
+    it("shows errors loading the proposal", async () => {
+      const { sdk, getPastLogs } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(1))], {
+        [requestId(1)]: { state: RequestState.FROZEN },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+      await screen.findByTitle(requestId(1))
+      getPastLogs.mockRejectedValueOnce(new Error("rpc unavailable"))
+
+      fireEvent.click(screen.getByTitle(requestId(1)))
+
+      expect(await screen.findByText("Failed to load proposed transaction: rpc unavailable")).toBeDefined()
     })
   })
 
