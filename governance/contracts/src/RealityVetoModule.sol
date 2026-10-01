@@ -11,7 +11,9 @@ import {Enum, ISafe} from "@/interfaces/ISafe.sol";
  * @dev Stateless by design: `SAFE`, `REALITY_MODULE` and `VETOER` are set once in the constructor and never
  *      change, and `vetoProposal` performs no check beyond the caller. A module bypasses owner signatures,
  *      the threshold and the transaction guard, so this contract's own access control is the whole security
- *      boundary.
+ *      boundary. From Safe 1.5.0, a module guard, if set, does apply to `execTransactionFromModule`. It can
+ *      only block a veto, not widen it: a guard that reverts makes `vetoProposal` revert and leaves the
+ *      proposal executable.
  *
  *      See `script/README.md` for the deployment and operations runbook.
  */

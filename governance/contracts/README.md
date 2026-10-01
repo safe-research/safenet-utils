@@ -15,7 +15,7 @@ A Safe module is the right tool for this: it can bypass owner signatures and the
 - `SAFE`, `REALITY_MODULE` and `VETOER` are set once in the constructor and are immutable. No admin function changes them.
 - The only external function, `vetoProposal(bytes32 questionHash)`, is callable only by `VETOER` and always targets `REALITY_MODULE` with the same encoded call (`markProposalAsInvalidByHash`). There is no path from `vetoProposal` to any other `to`/`data` pair.
 
-This makes the module's own access control ( `msg.sender == VETOER` ) the entire security boundary. See the contract's NatSpec for the full threat model.
+This makes the module's own access control ( `msg.sender == VETOER` ) the entire security boundary. See the contract's NatSpec for the full threat model. One caveat from Safe 1.5.0 on: a module guard, if the Safe sets one, applies to `execTransactionFromModule` and can block a veto, though it can never widen what the vetoer can do.
 
 ### Architecture
 

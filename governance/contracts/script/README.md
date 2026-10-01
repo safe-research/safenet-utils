@@ -63,15 +63,17 @@ Raw calldata is `0x610b5925` followed by the module address left-padded to 32 by
 
 ### Vetoing a proposal
 
-`RealityVetoModule.vetoProposal` takes the question hash directly, not the proposal id and transaction hashes. Compute it exactly the way the Reality module does when the proposal is added — `keccak256` of the ASCII string `buildQuestion(proposalId, txHashes)` returns, not of the id or hashes on their own:
+`RealityVetoModule.vetoProposal` takes the question hash directly, not the proposal id and transaction hashes. Compute it exactly the way the Reality module does when the proposal is added: `keccak256` of the raw UTF-8 bytes `buildQuestion(proposalId, txHashes)` returns, not of the id or hashes on their own:
 
 ```
-QUESTION=$(cast call $VETO_REALITY_MODULE_ADDRESS "buildQuestion(string,bytes32[])(string)" "$PROPOSAL_ID" "[$TX_HASHES]" --rpc-url $RPC_URL)
-QUESTION_HASH=$(cast keccak "$QUESTION")
+RAW=$(cast call $VETO_REALITY_MODULE_ADDRESS "buildQuestion(string,bytes32[])" "$PROPOSAL_ID" "[$TX_HASHES]" --rpc-url $RPC_URL)
+QUESTION_HASH=$(cast keccak "$(cast abi-decode "f()(bytes)" "$RAW")")
 cast send $VETO_MODULE "vetoProposal(bytes32)" $QUESTION_HASH --rpc-url $RPC_URL
 ```
 
-The `$PROPOSAL_ID` and `$TX_HASHES` must be exactly those the proposal was, or will be, added with — a different value at either produces a different hash and vetoes nothing.
+Do not declare a `(string)` return type and hash what cast prints. Cast prints the decoded string wrapped in literal double quotes, and without them a `0x`-prefixed proposal id makes `cast keccak` parse the input as hex. Either way the hash is wrong, and the veto invalidates an unrelated hash while still emitting `ProposalVetoed`.
+
+The `$PROPOSAL_ID` and `$TX_HASHES` must be exactly those the proposal was, or will be, added with. A different value at either produces a different hash and vetoes nothing.
 
 Four things to know before pressing send:
 
