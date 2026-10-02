@@ -25,10 +25,14 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: ">=24.15.0 <25"
           cache: npm
           cache-dependency-path: governance/apps/safenet-arbitration/package-lock.json
 
       - run: just deps
 
       - run: just check
+
+      - run: npm --prefix governance/apps/safenet-arbitration test
+
+      - run: npm --prefix governance/apps/safenet-arbitration run build

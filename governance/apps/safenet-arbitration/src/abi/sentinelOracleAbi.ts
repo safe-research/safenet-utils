@@ -7,6 +7,9 @@ export const sentinelOracleAbi = parseAbi([
   "struct Terms { uint64 commitDeadline; uint24 daoFeeShare; uint64 revealDeadline; uint96 bondTarget; uint8 _padding; address sponsor; uint96 slashAmount; }",
   "struct Progress { uint8 state; uint96 fee; uint64 arbitrationDeadline; uint16 committedCount; uint16 revealedCount; uint16 approveSentinelCount; uint16 denySentinelCount; uint24 _padding; }",
   "struct Request { Terms terms; Progress progress; }",
+  "function PROPOSER() view returns (address)",
+  "function COMMIT_WINDOW() view returns (uint32)",
+  "function ARBITRATOR() view returns (address)",
   "function getRequest(bytes32 requestId) view returns (Request)",
   "function resolveDispute(bytes32 requestId, bool approveWins, string context)",
   "function markOutOfScope(bytes32 requestId, string context)",
@@ -14,6 +17,8 @@ export const sentinelOracleAbi = parseAbi([
   "event DisputeResolved(bytes32 indexed requestId, uint8 outcome, uint128 slashed, string context)",
   "event DisputeOutOfScope(bytes32 indexed requestId, string context)",
   "event ArbitrationTimedOut(bytes32 indexed requestId)",
+  "event Committed(bytes32 indexed requestId, address indexed sentinel, uint96 bondAmount)",
+  "event Revealed(bytes32 indexed requestId, address indexed sentinel, bool approved, uint96 bondAmount, string reason)",
 ])
 
 // `SentinelOracleRequest.State`.
