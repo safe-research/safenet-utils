@@ -14,6 +14,8 @@ import { RequestState, sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
 export type ArbitrationRequest = {
   requestId: Hex
   sponsor: Address
+  // Block number the request's commit window closes at; see `fetchRequestProposal`.
+  commitDeadline: bigint
   approveCount: number
   denyCount: number
   // Block number after which the arbitrator can no longer rule and anyone may call `timeoutArbitration`.
@@ -52,14 +54,17 @@ export function openDisputeIds(logs: Pick<Log, "topics" | "data">[]): Hex[] {
   return [...open]
 }
 
+export async function ethCall(sdk: SafeAppsSDK, to: Address, data: Hex): Promise<Hex> {
+  return (await sdk.eth.call([{ to, data }])) as Hex
+}
+
 async function getRequest(sdk: SafeAppsSDK, oracleAddress: Address, requestId: Hex) {
-  const result = await sdk.eth.call([
-    {
-      to: oracleAddress,
-      data: encodeFunctionData({ abi: sentinelOracleAbi, functionName: "getRequest", args: [requestId] }),
-    },
-  ])
-  return decodeFunctionResult({ abi: sentinelOracleAbi, functionName: "getRequest", data: result as Hex })
+  const result = await ethCall(
+    sdk,
+    oracleAddress,
+    encodeFunctionData({ abi: sentinelOracleAbi, functionName: "getRequest", args: [requestId] }),
+  )
+  return decodeFunctionResult({ abi: sentinelOracleAbi, functionName: "getRequest", data: result })
 }
 
 // Lists the oracle's currently `FROZEN` requests whose dispute was triggered in the `config.logBlockRange` blocks just
@@ -91,6 +96,7 @@ export async function fetchArbitrationRequests(
     .map(({ requestId, request }) => ({
       requestId,
       sponsor: request.terms.sponsor,
+      commitDeadline: request.terms.commitDeadline,
       approveCount: request.progress.approveSentinelCount,
       denyCount: request.progress.denySentinelCount,
       arbitrationDeadline: request.progress.arbitrationDeadline,
