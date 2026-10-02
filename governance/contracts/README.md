@@ -93,3 +93,7 @@ Deploying the module, enabling it on the Safe, vetoing a proposal, monitoring, r
 
 - Operator runbook: [`script/README.md`](./script/README.md)
 - Threat model and invariants: NatSpec in [`src/RealityVetoModule.sol`](./src/RealityVetoModule.sol)
+
+## Audits
+
+See [audits/audit.md](./audits/audit.md) for audit reports.
