@@ -19,11 +19,13 @@ export const CONFIG = parseConfig({})
 // The mocked oracle's `PROPOSER` and `COMMIT_WINDOW`.
 export const CONSENSUS: Address = "0xC0C0c0c0C0C0c0c0c0C0c0C0C0C0C0C0C0C0c0c0"
 export const COMMIT_WINDOW = 10
+export const REVEAL_WINDOW = 10
 
 type RequestFixture = {
   state: (typeof RequestState)[keyof typeof RequestState]
   sponsor?: Address
   commitDeadline?: bigint
+  revealDeadline?: bigint
   approve?: number
   deny?: number
   deadline?: bigint
@@ -109,6 +111,17 @@ function matchesFilter(log: MockLog, { address, fromBlock, toBlock, topics }: Lo
 export function mockOracleSdk(logs: MockLog[], requests: Record<Hex, RequestFixture>, latestBlock = 100) {
   const getBlockByNumber = vi.fn(async () => ({ number: latestBlock }))
   const getPastLogs = vi.fn(async ([filter]: [LogFilter]) => logs.filter((log) => matchesFilter(log, filter)))
+  // Makes the next `getPastLogs` call for `address`'s logs fail, leaving queries for other contracts unaffected.
+  const failNextLogsOf = (address: Address, error: Error) => {
+    const fetchLogs = getPastLogs.getMockImplementation()!
+    getPastLogs.mockImplementation(async ([filter]) => {
+      if (filter.address.toLowerCase() !== address.toLowerCase()) {
+        return fetchLogs([filter])
+      }
+      getPastLogs.mockImplementation(fetchLogs)
+      throw error
+    })
+  }
   const call = vi.fn(async ([tx]: [{ data: Hex }]) => {
     const decoded = decodeFunctionData({ abi: sentinelOracleAbi, data: tx.data })
     if (decoded.functionName === "PROPOSER") {
@@ -121,15 +134,16 @@ export function mockOracleSdk(logs: MockLog[], requests: Record<Hex, RequestFixt
       throw new Error(`unexpected call to ${decoded.functionName}`)
     }
     const fixture = requests[decoded.args[0]]
+    // Created in block 1 unless given, which matches `proposalLog`'s default block.
+    const commitDeadline = fixture.commitDeadline ?? BigInt(1 + COMMIT_WINDOW)
     return encodeFunctionResult({
       abi: sentinelOracleAbi,
       functionName: "getRequest",
       result: {
         terms: {
-          // Created in block 1 unless given, which matches `proposalLog`'s default block.
-          commitDeadline: fixture.commitDeadline ?? BigInt(1 + COMMIT_WINDOW),
+          commitDeadline,
           daoFeeShare: 0,
-          revealDeadline: 2n,
+          revealDeadline: fixture.revealDeadline ?? commitDeadline + BigInt(REVEAL_WINDOW),
           bondTarget: 0n,
           _padding: 0,
           sponsor: fixture.sponsor ?? "0x1111111111111111111111111111111111111111",
@@ -150,5 +164,5 @@ export function mockOracleSdk(logs: MockLog[], requests: Record<Hex, RequestFixt
   })
   const send = vi.fn(async () => ({ safeTxHash: `0x${"ab".repeat(32)}` }))
   const sdk = { eth: { getBlockByNumber, getPastLogs, call }, txs: { send } } as unknown as SafeAppsSDK
-  return { sdk, getBlockByNumber, getPastLogs, call, send }
+  return { sdk, getBlockByNumber, getPastLogs, failNextLogsOf, call, send }
 }

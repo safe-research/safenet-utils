@@ -4,6 +4,7 @@ import { encodeRuling } from "@/lib/rulings"
 import { RequestState } from "@/abi/sentinelOracleAbi"
 import {
   CONFIG,
+  CONSENSUS,
   disputeLog,
   mockOracleSdk,
   proposalLog,
@@ -170,12 +171,12 @@ describe("ArbitrationRequestList", () => {
     })
 
     it("shows errors loading the proposal", async () => {
-      const { sdk, getPastLogs } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(1))], {
+      const { sdk, failNextLogsOf } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(1))], {
         [requestId(1)]: { state: RequestState.FROZEN },
       })
       renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
       await screen.findByTitle(requestId(1))
-      getPastLogs.mockRejectedValueOnce(new Error("rpc unavailable"))
+      failNextLogsOf(CONSENSUS, new Error("rpc unavailable"))
 
       fireEvent.click(screen.getByTitle(requestId(1)))
 
