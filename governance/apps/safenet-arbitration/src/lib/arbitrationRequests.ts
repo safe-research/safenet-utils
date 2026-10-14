@@ -16,6 +16,8 @@ export type ArbitrationRequest = {
   sponsor: Address
   // Block number the request's commit window closes at; see `fetchRequestProposal`.
   commitDeadline: bigint
+  // Last block sentinels could reveal their votes in; see `fetchRequestVotes`.
+  revealDeadline: bigint
   approveCount: number
   denyCount: number
   // Block number after which the arbitrator can no longer rule and anyone may call `timeoutArbitration`.
@@ -97,6 +99,7 @@ export async function fetchArbitrationRequests(
       requestId,
       sponsor: request.terms.sponsor,
       commitDeadline: request.terms.commitDeadline,
+      revealDeadline: request.terms.revealDeadline,
       approveCount: request.progress.approveSentinelCount,
       denyCount: request.progress.denySentinelCount,
       arbitrationDeadline: request.progress.arbitrationDeadline,

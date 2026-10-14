@@ -1,7 +1,8 @@
 import { parseAbi } from "viem"
 
 // Hand-written subset of the `SentinelOracle` ABI, copied from safe-research/safenet@0be96367486a9fbd804c702b255fecfb3adbdcb3
-// (`contracts/src/SentinelOracle.sol`, structs from `contracts/src/libraries/SentinelOracleRequests.sol`). The
+// (`contracts/src/SentinelOracle.sol`, structs from `contracts/src/libraries/SentinelOracleRequests.sol`, `Revealed` from
+// `contracts/src/libraries/SentinelOracleCommitment.sol`). The
 // `_padding` members are part of the returned structs, so they must stay for `getRequest` to decode.
 export const sentinelOracleAbi = parseAbi([
   "struct Terms { uint64 commitDeadline; uint24 daoFeeShare; uint64 revealDeadline; uint96 bondTarget; uint8 _padding; address sponsor; uint96 slashAmount; }",
@@ -16,6 +17,7 @@ export const sentinelOracleAbi = parseAbi([
   "event DisputeResolved(bytes32 indexed requestId, uint8 outcome, uint128 slashed, string context)",
   "event DisputeOutOfScope(bytes32 indexed requestId, string context)",
   "event ArbitrationTimedOut(bytes32 indexed requestId)",
+  "event Revealed(bytes32 indexed requestId, address indexed sentinel, bool approved, uint96 bondAmount, string reason)",
 ])
 
 // `SentinelOracleRequest.State`.
