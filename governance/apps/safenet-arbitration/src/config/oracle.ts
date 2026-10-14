@@ -21,7 +21,7 @@ const checkedAddressSchema = z
 // Defaults point at the current Gnosis Chain testnet `SentinelOracle`; keep in sync with `.env.sample`.
 const envSchema = z.object({
   VITE_CHAIN_ID: emptyToDefault(z.coerce.number().int().nonnegative(), "100"),
-  VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0x544F12bAd6FF72564abBc7eA6494A2a4BdD0DDD0"),
+  VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0xB83c4b66e752D947c1F55fd703b7937e21e401E4"),
   VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
 })
 
