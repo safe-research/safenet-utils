@@ -18,6 +18,10 @@ The `SentinelOracle` to operate on is fixed at build time through Vite environme
 [`.env.sample`](./.env.sample). Unset or empty variables default to the current Gnosis Chain testnet deployment; copy
 the file to `.env` to point the app at a different deployment.
 
+The chain ID and oracle address can also be overridden at runtime from the settings dialog (the cog next to the
+headline, shown once connected to Safe{Wallet}). Leaving a field empty resets it to its build-time default. The override is
+kept in the browser's `localStorage`; saving the build-time defaults again removes it.
+
 Requests awaiting arbitration are found by querying the oracle's dispute events (`DisputeTriggered` minus
 `DisputeResolved`/`DisputeOutOfScope`/`ArbitrationTimedOut`), then confirming each candidate is still `FROZEN` with
 `getRequest`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest

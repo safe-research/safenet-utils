@@ -18,9 +18,11 @@ const checkedAddressSchema = z
   .refine((arg) => isAddress(arg, { strict: false }) && arg === getAddress(arg), "Invalid address format or checksum")
   .transform((arg) => arg as Address)
 
+const chainIdSchema = z.coerce.number().int().positive()
+
 // Defaults point at the current Gnosis Chain testnet `SentinelOracle`; keep in sync with `.env.sample`.
 const envSchema = z.object({
-  VITE_CHAIN_ID: emptyToDefault(z.coerce.number().int().nonnegative(), "100"),
+  VITE_CHAIN_ID: emptyToDefault(chainIdSchema, "100"),
   VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0xB83c4b66e752D947c1F55fd703b7937e21e401E4"),
   VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
 })
@@ -38,3 +40,12 @@ export function parseConfig(env: Record<string, unknown>): OracleConfig {
 }
 
 export const config = parseConfig(import.meta.env)
+
+// The part of the config that can be overridden at runtime from the settings dialog; empty values reset to the
+// build-time config.
+export const oracleSettingsSchema = z.object({
+  chainId: emptyToDefault(chainIdSchema, config.chainId),
+  oracleAddress: emptyToDefault(checkedAddressSchema, config.oracleAddress),
+})
+
+export type OracleSettings = z.infer<typeof oracleSettingsSchema>
