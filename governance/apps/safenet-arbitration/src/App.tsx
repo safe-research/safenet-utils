@@ -1,13 +1,17 @@
-import { config } from "@/config/oracle"
+import { Cog6ToothIcon } from "@heroicons/react/24/outline"
+import { useState } from "react"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
+import { SettingsDialog } from "@/components/SettingsDialog"
+import { useOracleConfig } from "@/hooks/useOracleConfig"
 import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
 
 function App() {
   const { sdk, connection } = useSafeAppsSdk()
+  const { config, setSettings } = useOracleConfig()
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <main className="mx-auto max-w-4xl p-6 font-sans">
-      <h1 className="mb-4 text-2xl font-semibold">Arbitration</h1>
       {connection.status === "connecting" && <p className="text-muted-foreground">Connecting to {"Safe{Wallet}"}…</p>}
       {connection.status === "unavailable" && (
         <p className="text-danger">
@@ -16,6 +20,26 @@ function App() {
       )}
       {connection.status === "connected" && (
         <>
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Arbitration</h1>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Settings"
+              title="Settings"
+              className="rounded p-1 text-muted-foreground hover:bg-subtle hover:text-foreground"
+            >
+              <Cog6ToothIcon aria-hidden="true" className="size-6" />
+            </button>
+          </div>
+          {settingsOpen && (
+            <SettingsDialog
+              activeChainId={connection.safe.chainId}
+              settings={{ chainId: config.chainId, oracleAddress: config.oracleAddress }}
+              onSave={setSettings}
+              onClose={() => setSettingsOpen(false)}
+            />
+          )}
           <dl className="mb-6 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
             <dt className="text-muted-foreground">Safe</dt>
             <dd className="font-mono break-all">{connection.safe.safeAddress}</dd>
