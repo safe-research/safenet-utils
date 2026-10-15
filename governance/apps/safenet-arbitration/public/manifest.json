@@ -1,5 +1,6 @@
 {
   "name": "Safenet Arbitration",
   "description": "Rule on disputed Safenet SentinelOracle requests as the arbitrator Safe.",
-  "iconPath": "logo.svg"
+  "iconPath": "logo.svg",
+  "safe_apps_permissions": ["clipboard-write"]
 }

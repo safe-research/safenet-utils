@@ -3,6 +3,7 @@ import { type SyntheticEvent, useEffect, useState } from "react"
 import type { Address, Hex } from "viem"
 import { ExternalLink } from "@/components/ExternalLink"
 import { type ChainId, explorerAddressUrl, explorerTxUrl, safeWalletTxUrl, safeWalletUrl } from "@/lib/links"
+import { copyToClipboard } from "@/lib/clipboard"
 import { shortenHash } from "@/lib/format"
 
 const COPIED_FEEDBACK_MS = 1500
@@ -23,7 +24,7 @@ function CopyButton({ value }: { value: string }) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(value)
+      await copyToClipboard(value)
       setCopied(true)
     } catch (error) {
       console.warn("Failed to copy to clipboard", error)
