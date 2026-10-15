@@ -52,3 +52,41 @@ export function safeWalletTxUrl(chainId: ChainId, safe: Address, safeTxHash: Hex
     targets && `${SAFE_WALLET_URL}/transactions/tx?safe=${targets.shortName}:${safe}&id=multisig_${safe}_${safeTxHash}`
   )
 }
+
+// The Charter version SafeDAO last approved, rather than the possibly unapproved draft on `main`.
+const CHARTER_URL =
+  "https://github.com/safe-research/safenet-charter/blob/latest-safedao-approved/Safenet_Arbitration_Charter.md"
+
+// The Charter's rules, keyed by the identifier a denying sentinel gives as its vote reason (Charter § 2.14), with the
+// anchor GitHub generates for the rule's heading. The Charter defines no stable anchors, so these follow its headings.
+const CHARTER_RULES: Record<string, { title: string; anchor: string }> = {
+  "R-4.0": { title: "Network and Safe validity", anchor: "r-40--network-and-safe-validity" },
+  "R-4.1": { title: "Settings-change blocking", anchor: "r-41--settings-change-blocking" },
+  "R-4.2": { title: "Delegatecall integrity", anchor: "r-42--delegatecall-integrity" },
+  "R-4.3": { title: "Value-target manipulation", anchor: "r-43--value-target-manipulation" },
+  "R-4.4": {
+    title: "Authorization-target manipulation: wrong target",
+    anchor: "r-44--authorization-target-manipulation-wrong-target",
+  },
+  "R-4.5": {
+    title: "Authorization-target manipulation: excessive approval amount",
+    anchor: "r-45--authorization-target-manipulation-excessive-approval-amount",
+  },
+  "R-4.6": { title: "Known malicious or compromised target", anchor: "r-46--known-malicious-or-compromised-target" },
+}
+
+export type CharterLink = { url: string; title: string }
+
+// Where a sentinel's vote reason points in the Charter: the cited rule, or the Charter as a whole for a reason that
+// is not a known rule identifier (the protocol accepts arbitrary strings). An empty reason has no link.
+export function charterReasonLink(reason: string): CharterLink | undefined {
+  const id = reason.trim().toUpperCase()
+  if (id === "") {
+    return undefined
+  }
+  const rule = CHARTER_RULES[id]
+  if (!rule) {
+    return { url: CHARTER_URL, title: "Safenet Arbitration Charter" }
+  }
+  return { url: `${CHARTER_URL}#${rule.anchor}`, title: `${id} — ${rule.title}` }
+}
