@@ -1,6 +1,7 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import { Fragment, useState } from "react"
 import type { Hex } from "viem"
+import { AddressValue, HexValue } from "@/components/HexValue"
 import { RequestDetails } from "@/components/RequestDetails"
 import type { OracleConfig } from "@/config/oracle"
 import { useArbitrationRequests } from "@/hooks/useArbitrationRequests"
@@ -65,11 +66,15 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
                       isExpanded ? "bg-subtle" : "border-b border-divider"
                     }`}
                   >
-                    <td className="py-2 font-mono" title={request.requestId}>
-                      {shorten(request.requestId)}
+                    <td className="py-2" title={request.requestId}>
+                      <HexValue value={request.requestId} display={shorten(request.requestId)} />
                     </td>
-                    <td className="py-2 font-mono" title={request.sponsor}>
-                      {shorten(request.sponsor)}
+                    <td className="py-2" title={request.sponsor}>
+                      <AddressValue
+                        chainId={config.chainId}
+                        address={request.sponsor}
+                        display={shorten(request.sponsor)}
+                      />
                     </td>
                     <td className="py-2">
                       {request.approveCount} / {request.denyCount}

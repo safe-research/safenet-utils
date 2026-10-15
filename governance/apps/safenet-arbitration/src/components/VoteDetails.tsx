@@ -1,6 +1,7 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { OracleConfig } from "@/config/oracle"
 import { useRequestVotes } from "@/hooks/useRequestVotes"
+import { AddressValue } from "@/components/HexValue"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
 
 // The votes sentinels revealed on an arbitration request, with the reason each gave (for a denial, the rule the
@@ -40,8 +41,12 @@ export function VoteDetails({
           <tbody>
             {votes.map((vote) => (
               <tr key={vote.sentinel} className="align-top">
-                <td className="py-1 pr-4 font-mono break-all" title={`Revealed in block ${vote.blockNumber}`}>
-                  {vote.sentinel}
+                <td className="py-1 pr-4">
+                  <AddressValue
+                    chainId={config.chainId}
+                    address={vote.sentinel}
+                    title={`Revealed in block ${vote.blockNumber}`}
+                  />
                 </td>
                 <td className={`py-1 pr-4 ${vote.approved ? "text-success" : "text-danger"}`}>
                   {vote.approved ? "Approve" : "Deny"}

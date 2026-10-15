@@ -1,6 +1,8 @@
 import { Cog6ToothIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
+import type { Address } from "viem"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
+import { AddressValue, SafeValue } from "@/components/HexValue"
 import { SettingsDialog } from "@/components/SettingsDialog"
 import { useOracleConfig } from "@/hooks/useOracleConfig"
 import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
@@ -42,11 +44,15 @@ function App() {
           )}
           <dl className="mb-6 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
             <dt className="text-muted-foreground">Safe</dt>
-            <dd className="font-mono break-all">{connection.safe.safeAddress}</dd>
+            <dd>
+              <SafeValue chainId={connection.safe.chainId} safe={connection.safe.safeAddress as Address} />
+            </dd>
             <dt className="text-muted-foreground">Chain ID</dt>
             <dd className="font-mono">{connection.safe.chainId}</dd>
             <dt className="text-muted-foreground">Sentinel oracle</dt>
-            <dd className="font-mono break-all">{config.oracleAddress}</dd>
+            <dd>
+              <AddressValue chainId={config.chainId} address={config.oracleAddress} />
+            </dd>
           </dl>
           {connection.safe.chainId === config.chainId ? (
             <ArbitrationRequestList sdk={sdk} config={config} />
