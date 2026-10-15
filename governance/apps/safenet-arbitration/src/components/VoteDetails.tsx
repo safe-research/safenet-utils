@@ -1,8 +1,10 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { OracleConfig } from "@/config/oracle"
 import { useRequestVotes } from "@/hooks/useRequestVotes"
+import { ExternalLink } from "@/components/ExternalLink"
 import { AddressValue } from "@/components/HexValue"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
+import { charterReasonLink } from "@/lib/links"
 
 // The votes sentinels revealed on an arbitration request, with the reason each gave (for a denial, the rule the
 // transaction violates).
@@ -52,7 +54,7 @@ export function VoteDetails({
                   {vote.approved ? "Approve" : "Deny"}
                 </td>
                 <td className="py-1 break-all">
-                  {vote.reason || <span className="text-muted-foreground">No reason given</span>}
+                  <VoteReason reason={vote.reason} />
                 </td>
               </tr>
             ))}
@@ -60,5 +62,18 @@ export function VoteDetails({
         </table>
       )}
     </section>
+  )
+}
+
+// A vote reason, linking to the Charter rule it cites.
+function VoteReason({ reason }: { reason: string }) {
+  const link = charterReasonLink(reason)
+  if (!link) {
+    return reason || <span className="text-muted-foreground">No reason given</span>
+  }
+  return (
+    <ExternalLink href={link.url} title={link.title}>
+      {reason}
+    </ExternalLink>
   )
 }
