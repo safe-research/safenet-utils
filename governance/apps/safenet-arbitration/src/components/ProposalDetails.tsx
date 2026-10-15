@@ -1,11 +1,18 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { ReactNode } from "react"
+import { ExternalLink } from "@/components/ExternalLink"
+import { AddressValue, HexValue, SafeTxHashValue, SafeValue, TxHashValue } from "@/components/HexValue"
 import type { OracleConfig } from "@/config/oracle"
 import { useRequestProposal } from "@/hooks/useRequestProposal"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
+import { explorerBlockUrl } from "@/lib/links"
+import { truncateHex } from "@/lib/format"
 
 // `Enum.Operation` of the Safe contracts.
 const OPERATION_LABELS: Record<number, string> = { 0: "Call", 1: "DelegateCall" }
+
+// Calldata can be arbitrarily long, so only its start is shown; the copy button still copies all of it.
+const DATA_PREVIEW_BYTES = 100
 
 // The Safe transaction an arbitration request was posted for, as proposed to `Consensus`.
 export function ProposalDetails({
@@ -30,11 +37,16 @@ export function ProposalDetails({
   }
 
   const { transaction } = proposal
+  // The Safe transaction can be for any chain, while the proposal itself happened on the oracle's chain.
+  const data = truncateHex(transaction.data, DATA_PREVIEW_BYTES)
   const rows: [string, ReactNode][] = [
-    ["Safe tx hash", proposal.safeTxHash],
+    [
+      "Safe tx hash",
+      <SafeTxHashValue chainId={transaction.chainId} safe={transaction.safe} safeTxHash={proposal.safeTxHash} />,
+    ],
     ["Chain ID", transaction.chainId.toString()],
-    ["Safe", transaction.safe],
-    ["To", transaction.to],
+    ["Safe", <SafeValue chainId={transaction.chainId} safe={transaction.safe} />],
+    ["To", <AddressValue chainId={transaction.chainId} address={transaction.to} />],
     ["Value", `${transaction.value} wei`],
     [
       "Operation",
@@ -42,16 +54,33 @@ export function ProposalDetails({
         {OPERATION_LABELS[transaction.operation] ?? `Unknown (${transaction.operation})`}
       </span>,
     ],
-    ["Data", <span className="block max-h-40 overflow-y-auto">{transaction.data}</span>],
+    [
+      "Data",
+      <HexValue
+        value={transaction.data}
+        display={data}
+        title={data === transaction.data ? undefined : `${(transaction.data.length - 2) / 2} bytes`}
+      />,
+    ],
     ["Nonce", transaction.nonce.toString()],
     ["Safe tx gas", transaction.safeTxGas.toString()],
     ["Base gas", transaction.baseGas.toString()],
     ["Gas price", transaction.gasPrice.toString()],
-    ["Gas token", transaction.gasToken],
-    ["Refund receiver", transaction.refundReceiver],
+    ["Gas token", <AddressValue chainId={transaction.chainId} address={transaction.gasToken} />],
+    ["Refund receiver", <AddressValue chainId={transaction.chainId} address={transaction.refundReceiver} />],
     ["Epoch", proposal.epoch.toString()],
-    ["Oracle data", proposal.oracleData],
-    ["Proposed in", `block ${proposal.blockNumber} (${proposal.transactionHash})`],
+    ["Oracle data", <HexValue value={proposal.oracleData} />],
+    [
+      "Proposed in",
+      <>
+        block{" "}
+        <ExternalLink href={explorerBlockUrl(config.chainId, proposal.blockNumber)}>
+          {proposal.blockNumber}
+        </ExternalLink>{" "}
+        (
+        <TxHashValue chainId={config.chainId} hash={proposal.transactionHash} />)
+      </>,
+    ],
   ]
 
   return (
