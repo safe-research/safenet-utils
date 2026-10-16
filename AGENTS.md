@@ -8,6 +8,7 @@ Current packages:
 
 - `governance/contracts/` — governance/periphery Solidity contracts and deployment scripts (Foundry).
 - `governance/apps/safenet-arbitration/` — Safe App (Vite, React, TypeScript, Tailwind CSS) for the Safe holding a `SentinelOracle`'s `ARBITRATOR` role. Talks to chain state only through `@safe-global/safe-apps-sdk`; npm dependencies are installed with `just deps`.
+- `testing/` — Test transactions (static JSON files, one per case, in the shape of the [sentinel test vectors](https://github.com/safe-research/sentinel-test-vectors)) and bash scripts built on Foundry's `cast`, `curl` and `jq` that propose them for a Safe under test, to check the production Sentinels against the Safenet Arbitration Charter. `just check` runs `shellcheck` over its scripts.
 
 The repo is being built up incrementally — packages (e.g. `governance/contracts/` for Solidity/Foundry, `examples/` for TypeScript scripts) are scaffolded as they're needed rather than upfront. When adding a new package:
 

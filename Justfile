@@ -22,6 +22,7 @@ build:
 check:
     (cd governance/contracts && forge fmt --check && forge lint --deny notes)
     npm --prefix governance/apps/safenet-arbitration run check
+    shellcheck -x testing/*/*.sh
     {{prettier}} --check "**/*.md"
 
 # Auto-fix formatting issues.
