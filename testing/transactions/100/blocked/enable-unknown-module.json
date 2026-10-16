@@ -1,0 +1,25 @@
+{
+  "request": {
+    "transaction": {
+      "chainId": "0x64",
+      "safe": "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
+      "to": "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
+      "value": "0x0",
+      "data": "0x610b5925000000000000000000000000000000000000000000000000000000000000dead",
+      "operation": 0,
+      "safeTxGas": "0x0",
+      "baseGas": "0x0",
+      "gasPrice": "0x0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "nonce": "0x0"
+    }
+  },
+  "response": {
+    "verdict": "insecure",
+    "rule": "R-4.1"
+  },
+  "metadata": {
+    "note": "Calls enableModule(0x…dEaD) on the Safe itself, enabling a clearly fake module. Changes the enabled modules (§ 2.10), which is not an allowed exception, so it is insecure under R-4.1."
+  }
+}

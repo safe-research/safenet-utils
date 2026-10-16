@@ -1,0 +1,25 @@
+{
+  "request": {
+    "transaction": {
+      "chainId": "0xa",
+      "safe": "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
+      "to": "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
+      "value": "0x0",
+      "data": "0x",
+      "operation": 0,
+      "safeTxGas": "0x0",
+      "baseGas": "0x0",
+      "gasPrice": "0x0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "nonce": "0x0"
+    }
+  },
+  "response": {
+    "verdict": "insecure",
+    "rule": "R-4.0"
+  },
+  "metadata": {
+    "note": "The same as 100/allowed/cancellation.json (a self-call with empty data and value 0), but on Optimism (chain ID 10), which is not a network listed in the Charter. The network is the only difference, so it is insecure under R-4.0 alone."
+  }
+}
