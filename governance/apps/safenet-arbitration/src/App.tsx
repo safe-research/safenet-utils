@@ -1,8 +1,7 @@
 import { Cog6ToothIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
-import type { Address } from "viem"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
-import { AddressValue, SafeValue } from "@/components/HexValue"
+import { AddressChip } from "@/components/AddressChip"
 import { SettingsDialog } from "@/components/SettingsDialog"
 import { useOracleConfig } from "@/hooks/useOracleConfig"
 import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
@@ -22,17 +21,20 @@ function App() {
       )}
       {connection.status === "connected" && (
         <>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Arbitration</h1>
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Settings"
-              title="Settings"
-              className="rounded p-1 text-muted-foreground hover:bg-subtle hover:text-foreground"
-            >
-              <Cog6ToothIcon aria-hidden="true" className="size-6" />
-            </button>
+            <div className="flex items-center gap-3">
+              <AddressChip chainId={config.chainId} address={config.oracleAddress} />
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Settings"
+                title="Settings"
+                className="rounded p-1 text-muted-foreground hover:bg-subtle hover:text-foreground"
+              >
+                <Cog6ToothIcon aria-hidden="true" className="size-6" />
+              </button>
+            </div>
           </div>
           {settingsOpen && (
             <SettingsDialog
@@ -42,18 +44,6 @@ function App() {
               onClose={() => setSettingsOpen(false)}
             />
           )}
-          <dl className="mb-6 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
-            <dt className="text-muted-foreground">Safe</dt>
-            <dd>
-              <SafeValue chainId={connection.safe.chainId} safe={connection.safe.safeAddress as Address} />
-            </dd>
-            <dt className="text-muted-foreground">Chain ID</dt>
-            <dd className="font-mono">{connection.safe.chainId}</dd>
-            <dt className="text-muted-foreground">Sentinel oracle</dt>
-            <dd>
-              <AddressValue chainId={config.chainId} address={config.oracleAddress} />
-            </dd>
-          </dl>
           {connection.safe.chainId === config.chainId ? (
             <ArbitrationRequestList sdk={sdk} config={config} />
           ) : (
