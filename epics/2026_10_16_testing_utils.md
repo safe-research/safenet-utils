@@ -12,7 +12,14 @@ This epic adds a small `testing/` package that contains:
 
 - A **collection of test transactions** as static JSON files, one file per case, in the same shape as the [sentinel test vectors](https://github.com/safe-research/sentinel-test-vectors). Each file holds the complete Safe transaction (concrete token, receivers and calldata) and its expected Charter verdict (`secure` or `insecure` plus the rule). The collection also includes the **setup** transactions that make receivers "known" (a prior transfer to them).
 - A script that **proposes** a selection of these files **directly to Safenet** via the relayer ([`safenet-proxy`](https://github.com/safe-research/safenet-proxy)) and prints the Safenet explorer link for each.
-- Optionally, a script that **proposes** a selection of these files to the **Safe{Wallet} interface** via the Safe Transaction Service API, signed with a proposer (delegate) key.
+- Optionally, a script that **proposes** a selection of these files to the **Safe{Wallet} interface** via
+---
+
+## CLA signature
+
+With the submission of this Pull Request, I confirm that I have read and agree to the terms of the [Contributor License Agreement](https://docs.safefoundation.org/cla).
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code) the Safe Transaction Service API, signed with a proposer (delegate) key.
 - A script that **creates a CoW Swap order** in the CoW orderbook and creates or updates the matching pre-sign transaction in the collection (`<chainId>/allowed/cow-swap-trade.json`). This is the only test transaction that is generated, because it depends on a live order. Otherwise it is a test file like any other.
 
 This is deliberately not an automated test suite. The scripts propose transactions and print the expected verdict. A human then compares that with the Sentinel votes shown in the explorer or the Safe{Wallet} interface. The goal is to check the production Sentinel service, not the reference `sentinel-engine` in the `safenet` repo. Expectations are therefore derived from the Charter only.
