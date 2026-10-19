@@ -43,3 +43,7 @@ contracts-deploy-reality-veto *args:
 # Run the arbitration Safe App's Vite dev server. See governance/apps/safenet-arbitration/README.md.
 safenet-arbitration-app-dev:
     npm --prefix governance/apps/safenet-arbitration run dev
+
+# Propose test transactions directly to Safenet. See testing/README.md.
+testing-propose-safenet *paths:
+    testing/scripts/propose-safenet.sh {{paths}}

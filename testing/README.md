@@ -18,6 +18,8 @@ testing/
 ├── .env.sample                  # All environment variables, with comments
 ├── lib/
 │   └── common.sh                # Shared helpers, sourced by all scripts
+├── scripts/
+│   └── propose-safenet.sh       # <path>... → Safenet relayer, prints explorer links
 └── transactions/<chainId>/<set>/<case>.json
 ```
 
@@ -92,7 +94,7 @@ The test token is the canonical USDC deployment of the chain (USDC.e, `0x2a22f9c
 
 The allowed transfers expect `secure` because the Safe paid A and B before, in `setup/known-receivers.json`, which puts them in the expected target set (§ 2.4). Execute the setup transaction before proposing the `allowed` and `blocked` sets. The setup transaction is the same batch as the MultiSend test, but at that point the Safe hasn't paid A and B yet (although they are its owners), so Sentinels may not rule the setup transaction itself `secure`. If the Safe already has the Safenet guard enabled and this blocks the setup transaction, run the setup before enabling the guard, or use the escape hatch.
 
-The unsupported-network case differs from `allowed/cancellation.json` only in its chain ID, so it tests the network rule alone. It uses `SAFE_ADDRESS` on chain ID 10, where the Safe Transaction Service can't hold it, so it is only meaningful when proposing directly to Safenet.
+The unsupported-network case differs from `allowed/cancellation.json` only in its chain ID, so it tests the network rule alone. Like every other file, it is proposed for `SAFE_ADDRESS` on the chain of the file, so it needs the Safe to be deployed at the same address on Optimism (for example as a multichain Safe created with Safe{Wallet}), with at least 2 owners.
 
 ## Environment
 
@@ -101,8 +103,40 @@ The scripts read their configuration from environment variables, and source `tes
 | Variable | Description |
 | --- | --- |
 | `SAFE_ADDRESS` | Safe under test. Replaces the placeholder Safe. Its first two owners replace the receiver placeholders. |
-| `CHAIN_ID` | Chain ID of the Safe (`1`, `100` or `42161`). Selects the Safe Transaction Service network. |
-| `SAFE_API_KEY` | API key for `api.safe.global`, used to read the Safe's nonce and owners from the Safe Transaction Service. |
-| `SAFE_NONCE` | Optional nonce override. The owners are still read from the Safe Transaction Service. |
+| `SAFE_API_KEY` | Optional API key for `api.safe.global`, used to read the Safe's nonce and owners from the Safe Transaction Service. Without it, the API allows 1 request per minute. A script run makes one request per chain, so this is enough to test one chain per run. |
+| `SAFE_NONCE` | Optional nonce override, applied on every chain. The owners are still read from the Safe Transaction Service. |
+| `SAFENET_RELAYER_URL` | Full URL of the Safenet relayer's transaction endpoint (e.g. `https://<proxy>/tx`), the same value as the explorer's relayer setting. Used by `propose-safenet.sh`. |
+| `SAFENET_EXPLORER_URL` | Safenet explorer base URL for the printed links. Defaults to `https://safenet-explorer.eth.limo`. |
 
-The Safe must have at least 2 owners. All proposed transactions share the same nonce, so they are alternatives to each other: executing one invalidates all others.
+There is no chain setting: each test transaction is proposed on the chain of its file (`chainId`), for `SAFE_ADDRESS` on that chain, whose nonce and owners are read from the Safe Transaction Service. The Safe must exist on every chain of the files passed to a script, with at least 2 owners. All proposed transactions of a chain share the same nonce, so they are alternatives to each other: executing one invalidates all others.
+
+## Setup
+
+Before proposing the `allowed` and `blocked` sets, the Safe must have paid receivers A and B (its first two owners) once, as in `setup/known-receivers.json`. Until there is a script to queue it, create the setup transaction by hand in Safe{Wallet}:
+
+1. Look up the Safe's first two owners, the first two listed under Settings → Setup → Members.
+2. Send 0.01 USDC (USDC.e on Gnosis Chain) to each of them, as one batch in the Transaction Builder or as two "Send" transactions.
+3. Have the owners sign and execute the transaction(s).
+
+Only then propose the test cases below, with the Safe's new nonce.
+
+## Propose to Safenet
+
+`propose-safenet.sh` proposes test transaction files directly to Safenet, through the relayer's full-transaction endpoint (`POST $SAFENET_RELAYER_URL`, the endpoint the Safenet explorer posts to). Pass any number of files or directories:
+
+```sh
+just testing-propose-safenet testing/transactions/100/allowed testing/transactions/100/blocked testing/transactions/10
+```
+
+It needs `SAFE_ADDRESS` and `SAFENET_RELAYER_URL`. Each transaction goes to the chain of its file, so the example above proposes for the Safe on Gnosis Chain and on Optimism. For each file, it prints the case, the expected verdict and the Safenet explorer link of the transaction:
+
+```
+transfer-known-receiver
+  expected:   secure
+  safeTxHash: 0x…
+  explorer:   https://safenet-explorer.eth.limo/#/safeTx?chainId=100&safeTxHash=0x…
+```
+
+Open the links and compare the Sentinel votes with the expected verdict. The relayer answers every request with an empty `202`, even if it can't parse the transaction, so the explorer link is the only way to confirm that a proposal landed. Only a non-2xx response is reported as an error. The script keeps going after an error and exits non-zero at the end.
+
+The transactions are not added to the Safe Transaction Service, so they don't show up in the Safe{Wallet} queue. The `safeTxHash` is computed locally.
