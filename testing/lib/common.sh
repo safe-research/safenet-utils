@@ -86,24 +86,29 @@ collect_files() {
 
 # tx_service_network CHAIN_ID
 #
-# Prints the Safe Transaction Service network name of a supported chain.
+# Prints the Safe Transaction Service network name of a chain with test
+# transactions: the networks of the Charter, and Optimism for the
+# unsupported-network case.
 tx_service_network() {
   case $1 in
     1) echo eth ;;
+    10) echo oeth ;;
     100) echo gno ;;
     42161) echo arb1 ;;
-    *) die "unsupported chain ID \"$1\" (expected 1, 100 or 42161)" ;;
+    *) die "no Safe Transaction Service network for chain ID \"$1\" (expected 1, 10, 100 or 42161)" ;;
   esac
 }
 
-# safe_info
+# safe_info CHAIN_ID
 #
 # Reads SAFE_ADDRESS on CHAIN_ID from the Safe Transaction Service and prints
 # {"address", "nonce", "owners"}, with the nonce as a decimal string. SAFE_NONCE,
-# if set, replaces the nonce. Fails if the Safe has fewer than 2 owners, because
+# if set, replaces the nonce. SAFE_API_KEY, if set, is sent as the API key;
+# without it, the Safe Transaction Service is rate limited. Fails if the Safe has fewer than 2 owners, because
 # its first two owners are the receivers of the test transactions.
 safe_info() {
-  require_env SAFE_ADDRESS CHAIN_ID SAFE_API_KEY
+  local chain_id=$1
+  require_env SAFE_ADDRESS
 
   [[ $SAFE_ADDRESS =~ ^0x[0-9a-fA-F]{40}$ ]] \
     || die "SAFE_ADDRESS is not an address: \"$SAFE_ADDRESS\""
@@ -112,14 +117,16 @@ safe_info() {
   fi
 
   local network response info owners
-  network=$(tx_service_network "$CHAIN_ID") || exit 1
+  local -a auth=()
+  network=$(tx_service_network "$chain_id") || exit 1
 
-  # The API key is passed on stdin so that it does not show up in the process
-  # list.
+  # The API key, if any, is passed on stdin so that it does not show up in the
+  # process list.
+  [[ -z ${SAFE_API_KEY:-} ]] || auth=(-H @-)
   response=$(
-    curl -fsS -H @- "$SAFE_TX_SERVICE_URL/$network/api/v1/safes/$SAFE_ADDRESS/" \
-      <<<"Authorization: Bearer $SAFE_API_KEY"
-  ) || die "failed to read Safe $SAFE_ADDRESS from the Safe Transaction Service ($network)"
+    curl -fsS "${auth[@]}" "$SAFE_TX_SERVICE_URL/$network/api/v1/safes/$SAFE_ADDRESS/" \
+      <<<"Authorization: Bearer ${SAFE_API_KEY:-}"
+  ) || die "failed to read Safe $SAFE_ADDRESS on chain $chain_id from the Safe Transaction Service ($network)"
 
   info=$(
     jq -c --arg nonce "${SAFE_NONCE:-}" \
@@ -129,7 +136,7 @@ safe_info() {
 
   owners=$(jq '.owners | length' <<<"$info")
   (( owners >= 2 )) \
-    || die "Safe $SAFE_ADDRESS has $owners owner(s), but the test transactions need 2 (its first two owners are the receivers)"
+    || die "Safe $SAFE_ADDRESS on chain $chain_id has $owners owner(s), but the test transactions need 2 (its first two owners are the receivers)"
 
   printf '%s\n' "$info"
 }
