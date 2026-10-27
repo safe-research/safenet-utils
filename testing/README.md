@@ -80,19 +80,27 @@ The Safe's owners are the receivers, so test funds are never sent to an outside 
 
 The expected verdicts follow the Charter, whose supported networks are chain IDs 1, 100 and 42161.
 
-The test token is the canonical USDC deployment of the chain (USDC.e, `0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0`, on Gnosis Chain), and every transfer is a fixed 0.01 USDC (`10000` base units). Receivers A and B are the Safe's first two owners. Batches are a DELEGATECALL to the canonical MultiSendCallOnly v1.4.1 (`0x9641d764fc13c8B624c04430C7356C1C7C8102e2`), which writes no Safe storage (R-4.2).
+The collection has the same test cases for each supported network, in `1/` (Ethereum Mainnet), `100/` (Gnosis Chain) and `42161/` (Arbitrum One). Their files differ only in `chainId` and the address of the test token, the canonical USDC deployment of the chain:
+
+| Chain | Directory | USDC |
+| --- | --- | --- |
+| Ethereum Mainnet | `1/` | USDC, `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| Gnosis Chain | `100/` | USDC.e (bridged USDC), `0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0` |
+| Arbitrum One | `42161/` | USDC (native), `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
+
+Every transfer is a fixed 0.01 USDC (`10000` base units). Receivers A and B are the Safe's first two owners. Batches are a DELEGATECALL to the canonical MultiSendCallOnly v1.4.1 (`0x9641d764fc13c8B624c04430C7356C1C7C8102e2`), which writes no Safe storage (R-4.2).
 
 | File | Transaction | Verdict | Rule |
 | --- | --- | --- | --- |
-| `100/setup/known-receivers.json` | MultiSend: `USDC.transfer(A, 10000)`, `USDC.transfer(B, 10000)` | — | — |
-| `100/allowed/transfer-known-receiver.json` | `USDC.transfer(A, 10000)` | secure | — |
-| `100/allowed/multisend-transfer-known-receivers.json` | MultiSend: `USDC.transfer(A, 10000)`, `USDC.transfer(B, 10000)` | secure | — |
-| `100/allowed/cancellation.json` | Self-call with empty data, CALL, value 0 (a Safe{Wallet} "reject" transaction) | secure | — |
-| `100/allowed/reset-fallback-handler.json` | Self-call `setFallbackHandler(address(0))`, CALL, value 0 | secure | — |
-| `100/allowed/cow-swap-trade.json` (generated, see [CoW Swap Trade](#cow-swap-trade)) | MultiSend: `EURC.approve(GPv2VaultRelayer, 10000)`, `GPv2Settlement.setPreSignature(orderUid, true)` | secure | — |
-| `100/blocked/enable-unknown-module.json` | Self-call `enableModule(0x…dEaD)` with a clearly fake module | insecure | R-4.1 |
-| `100/blocked/add-owner.json` | Self-call `addOwnerWithThreshold(0x…dEaD, 1)` with a clearly fake owner | insecure | R-4.1 |
-| `10/blocked/unsupported-network-cancellation.json` | `100/allowed/cancellation.json` on Optimism (chain ID 10) | insecure | R-4.0 |
+| `<chainId>/setup/known-receivers.json` | MultiSend: `USDC.transfer(A, 10000)`, `USDC.transfer(B, 10000)` | — | — |
+| `<chainId>/allowed/transfer-known-receiver.json` | `USDC.transfer(A, 10000)` | secure | — |
+| `<chainId>/allowed/multisend-transfer-known-receivers.json` | MultiSend: `USDC.transfer(A, 10000)`, `USDC.transfer(B, 10000)` | secure | — |
+| `<chainId>/allowed/cancellation.json` | Self-call with empty data, CALL, value 0 (a Safe{Wallet} "reject" transaction) | secure | — |
+| `<chainId>/allowed/reset-fallback-handler.json` | Self-call `setFallbackHandler(address(0))`, CALL, value 0 | secure | — |
+| `<chainId>/allowed/cow-swap-trade.json` (generated on chains 1 and 100 only, see [CoW Swap Trade](#cow-swap-trade)) | MultiSend: `EURC.approve(GPv2VaultRelayer, 10000)`, `GPv2Settlement.setPreSignature(orderUid, true)` | secure | — |
+| `<chainId>/blocked/enable-unknown-module.json` | Self-call `enableModule(0x…dEaD)` with a clearly fake module | insecure | R-4.1 |
+| `<chainId>/blocked/add-owner.json` | Self-call `addOwnerWithThreshold(0x…dEaD, 1)` with a clearly fake owner | insecure | R-4.1 |
+| `10/blocked/unsupported-network-cancellation.json` | `allowed/cancellation.json` on Optimism (chain ID 10) | insecure | R-4.0 |
 
 The allowed transfers expect `secure` because the Safe paid A and B before, in `setup/known-receivers.json`, which puts them in the expected target set (§ 2.4). Execute the setup transaction before proposing the `allowed` and `blocked` sets. The setup transaction is the same batch as the MultiSend test, but at that point the Safe hasn't paid A and B yet (although they are its owners), so Sentinels may not rule the setup transaction itself `secure`. If the Safe already has the Safenet guard enabled and this blocks the setup transaction, run the setup before enabling the guard, or use the escape hatch.
 
@@ -127,7 +135,7 @@ A chain with an entry is never read from the Safe Transaction Service, and the o
 Before proposing the `allowed` and `blocked` sets, the Safe must have paid receivers A and B (its first two owners) once, as in `setup/known-receivers.json`. Until there is a script to queue it, create the setup transaction by hand in Safe{Wallet}:
 
 1. Look up the Safe's first two owners, the first two listed under Settings → Setup → Members.
-2. Send 0.01 USDC (USDC.e on Gnosis Chain) to each of them, as one batch in the Transaction Builder or as two "Send" transactions.
+2. Send 0.01 USDC (the token of the chain's collection, see above) to each of them, as one batch in the Transaction Builder or as two "Send" transactions.
 3. Have the owners sign and execute the transaction(s).
 
 Only then propose the test cases below, with the Safe's new nonce.
