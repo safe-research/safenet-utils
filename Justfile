@@ -47,3 +47,7 @@ safenet-arbitration-app-dev:
 # Propose test transactions directly to Safenet. See testing/README.md.
 testing-propose-safenet *paths:
     testing/scripts/propose-safenet.sh {{paths}}
+
+# Create a CoW Swap order and its pre-sign test transaction for chain_id. See testing/README.md.
+testing-cow-order chain_id:
+    testing/scripts/create-cow-order.sh {{chain_id}}
