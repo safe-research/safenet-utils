@@ -44,10 +44,14 @@ contracts-deploy-reality-veto *args:
 safenet-arbitration-app-dev:
     npm --prefix governance/apps/safenet-arbitration run dev
 
-# Propose test transactions directly to Safenet. See testing/README.md.
-testing-propose-safenet *paths:
-    testing/scripts/propose-safenet.sh {{paths}}
+# Propose test transactions (default: all templates) directly to Safenet. -c/--chain and -s/--safe override CHAIN_ID and SAFE_ADDRESS. See testing/README.md.
+[arg("chain_id", long="chain", short="c")]
+[arg("safe_address", long="safe", short="s")]
+testing-propose-safenet chain_id=env("CHAIN_ID", "") safe_address=env("SAFE_ADDRESS", "") *paths="testing/transactions/templates":
+    CHAIN_ID={{quote(chain_id)}} SAFE_ADDRESS={{quote(safe_address)}} testing/scripts/propose-safenet.sh {{paths}}
 
-# Create a CoW Swap order and its pre-sign test transaction for chain_id. See testing/README.md.
-testing-cow-order chain_id:
-    testing/scripts/create-cow-order.sh {{chain_id}}
+# Create a CoW Swap order and its pre-sign test transaction. -c/--chain and -s/--safe override CHAIN_ID and SAFE_ADDRESS. See testing/README.md.
+[arg("chain_id", long="chain", short="c")]
+[arg("safe_address", long="safe", short="s")]
+testing-cow-order chain_id=env("CHAIN_ID", "") safe_address=env("SAFE_ADDRESS", ""):
+    CHAIN_ID={{quote(chain_id)}} SAFE_ADDRESS={{quote(safe_address)}} testing/scripts/create-cow-order.sh
