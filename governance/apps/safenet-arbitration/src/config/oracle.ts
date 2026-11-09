@@ -20,10 +20,10 @@ const checkedAddressSchema = z
 
 const chainIdSchema = z.coerce.number().int().positive()
 
-// Defaults point at the current Gnosis Chain testnet `SentinelOracle`; keep in sync with `.env.sample`.
+// Defaults point at the Safenet production (Aegis Network, Gnosis Chain) `SentinelOracle`; keep in sync with `.env.sample`.
 const envSchema = z.object({
   VITE_CHAIN_ID: emptyToDefault(chainIdSchema, "100"),
-  VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0xB83c4b66e752D947c1F55fd703b7937e21e401E4"),
+  VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0x4F61B8832978e83b80D69551AEf07557DBE41d03"),
   VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
 })
 
