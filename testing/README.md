@@ -20,6 +20,7 @@ testing/
 │   └── common.sh                # Shared helpers, sourced by all scripts
 ├── scripts/
 │   ├── create-cow-order.sh      # Creates a CoW presign order → writes generated/cow-swap-trade-<chainId>.json
+│   ├── propose-safe-wallet.sh   # <path>... → Safe Transaction Service, prints Safe{Wallet} links
 │   └── propose-safenet.sh       # <path>... → Safenet relayer, prints explorer links
 └── transactions/<folder>/<case>.json
 ```
@@ -115,8 +116,9 @@ just testing-cow-order [-c|--chain CHAIN_ID] [-s|--safe SAFE_ADDRESS]
 | `SAFE_ADDRESS` | Safe under test. Replaces the placeholder Safe. Its first two owners replace the receiver placeholders. |
 | `CHAIN_ID` | Decimal chain ID that the test transactions are proposed on, and the CoW Swap order is created on. |
 | `TOKEN_ADDRESS` | Optional test token, which replaces the token placeholder. Defaults to the canonical USDC of the chain, see [Test Token](#test-token). |
-| `SAFE_API_KEY` | Optional API key for `api.safe.global`, used to read the Safe's nonce and owners from the Safe Transaction Service. Without it, the API allows 1 request per minute. A script run makes one request, so this is enough for one run per minute. |
+| `SAFE_API_KEY` | Optional API key for `api.safe.global`, used to read the Safe's nonce and owners from the Safe Transaction Service. Without it, the API allows 1 request per minute. A script run reads the Safe once, so this is enough for one run per minute. `propose-safe-wallet.sh` also sends it with every proposal (one request per file). |
 | `SAFE_INFO` | Optional JSON with the Safe's nonce and owners per chain ID, instead of reading them from the Safe Transaction Service. See [Safe Info](#safe-info). |
+| `PROPOSER_PRIVATE_KEY` | Private key of a proposer (delegate) or an owner of the Safe, which signs the proposals. Used by `propose-safe-wallet.sh`, see [Propose to Safe{Wallet}](#propose-to-safewallet). |
 | `SAFENET_RELAYER_URL` | Full URL of the Safenet relayer's transaction endpoint (e.g. `https://<proxy>/tx`), the same value as the explorer's relayer setting. Used by `propose-safenet.sh`. |
 | `SAFENET_EXPLORER_URL` | Safenet explorer base URL for the printed links. Defaults to `https://safenet-explorer.eth.limo`. |
 
@@ -134,13 +136,13 @@ A chain with an entry is never read from the Safe Transaction Service, and the o
 
 ## Setup
 
-Before proposing the templates, the Safe must have paid receivers A and B (its first two owners) once, as in `setup/known-receivers.json`. Until there is a script to queue it, create the setup transaction by hand in Safe{Wallet}:
+Before proposing the templates, the Safe must have paid receivers A and B (its first two owners) once, as in `setup/known-receivers.json`. Queue the setup transaction in Safe{Wallet} with [`propose-safe-wallet.sh`](#propose-to-safewallet), which proposes it by default:
 
-1. Look up the Safe's first two owners, the first two listed under Settings → Setup → Members.
-2. Send 10000 base units of the [test token](#test-token) (0.01 USDC by default) to each of them, as one batch in the Transaction Builder or as two "Send" transactions.
-3. Have the owners sign and execute the transaction(s).
+```sh
+just testing-propose-safe-wallet -c 100
+```
 
-Only then propose the templates below, with the Safe's new nonce.
+Then have the owners sign and execute it in Safe{Wallet}. The Safe must hold at least 20000 base units of the [test token](#test-token) (0.02 USDC by default). Only then propose the templates below, with the Safe's new nonce.
 
 ## Propose to Safenet
 
@@ -162,7 +164,35 @@ transfer-known-receiver
 
 Open the links and compare the Sentinel votes with the note. The relayer answers every request with an empty `202`, even if it can't parse the transaction, so the explorer link is the only way to confirm that a proposal landed. Only a non-2xx response is reported as an error. The script keeps going after a relayer error and exits non-zero at the end. A file that can't be loaded, such as a generated file for another chain, stops the script.
 
-The transactions are not added to the Safe Transaction Service, so they don't show up in the Safe{Wallet} queue. The `safeTxHash` is computed locally.
+The transactions are not added to the Safe Transaction Service, so they don't show up in the Safe{Wallet} queue (use [`propose-safe-wallet.sh`](#propose-to-safewallet) for that). The `safeTxHash` is computed locally.
+
+## Propose to Safe{Wallet}
+
+`propose-safe-wallet.sh` proposes test transaction files to the Safe Transaction Service, so that they show up in the Safe{Wallet} queue of the Safe. Pass any number of files or directories; the recipe proposes the setup transaction if there are none:
+
+```sh
+just testing-propose-safe-wallet -c 100
+just testing-propose-safe-wallet -c 100 testing/transactions/templates
+```
+
+It needs `SAFE_ADDRESS`, `CHAIN_ID` and `PROPOSER_PRIVATE_KEY`. Every transaction goes to `CHAIN_ID`, with the Safe's current nonce on that chain. The script computes the `safeTxHash` locally, signs it with `PROPOSER_PRIVATE_KEY`, and names the case in the transaction's origin (`safenet-utils test: <case>`). For each file, it prints the case, its note (and reference, if any) and the Safe{Wallet} link of the transaction:
+
+```
+known-receivers
+  note:       Batches two transfers of 10000 base units of the test token (0.01 of a 6-decimal token such as USDC), …
+  safeTxHash: 0x…
+  safe:       https://app.safe.global/transactions/tx?safe=gno:0x…&id=multisig_0x…_0x…
+```
+
+A failed proposal is reported with the response of the Safe Transaction Service. The script keeps going after a proposal error and exits non-zero at the end. A file that can't be loaded stops the script, as with `propose-safenet.sh`. Proposals go to the Safe Transaction Service of `CHAIN_ID`, so they only work on chains it is known for (1, 10, 100 and 42161), even if the Safe's nonce and owners are set in `SAFE_INFO`. The templates can also be proposed this way, to see them in the queue. Never execute them: all transactions share the same nonce, and some of them would harm the Safe.
+
+`PROPOSER_PRIVATE_KEY` must be the key of a proposer (a delegate) or of an owner of the Safe. Use a dedicated proposer key: it can only propose, not confirm or execute, and it needs no funds. The key is passed to `cast` on the command line, so don't use it on a shared machine. To register the proposer once per Safe and chain:
+
+1. Create a key, for example with `cast wallet new`, and set it as `PROPOSER_PRIVATE_KEY`.
+2. In Safe{Wallet}, open the Safe on the chain, go to Settings → Setup → Proposers, click "Add proposer", and enter the address of the key (`cast wallet address --private-key …`).
+3. Sign the request with an owner wallet.
+
+A proposer's signature is not a confirmation, so the owners still sign every proposed transaction in Safe{Wallet}. If an owner key is used instead, the proposal counts as its confirmation.
 
 ## CoW Swap Trade
 
