@@ -1,0 +1,17 @@
+{
+  "transaction": {
+    "safe": "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
+    "to": "0x70ce70ce70ce70ce70ce70ce70ce70ce70ce70ce",
+    "value": "0x0",
+    "data": "0xa9059cbb000000000000000000000000a11cea11cea11cea11cea11cea11cea11cea11ce0000000000000000000000000000000000000000000000000000000000002710",
+    "operation": 0,
+    "safeTxGas": "0x0",
+    "baseGas": "0x0",
+    "gasPrice": "0x0",
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "refundReceiver": "0x0000000000000000000000000000000000000000"
+  },
+  "metadata": {
+    "note": "Transfers 10000 base units of the test token to receiver A (the Safe's first owner), which the Safe paid in setup/known-receivers.json. Exercises R-4.3: the receiver is in the expected target set (§ 2.4)."
+  }
+}

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-# create-cow-order.sh CHAIN_ID
+# create-cow-order.sh
 #
 # Creates a CoW Swap order for the Safe under test (SAFE_ADDRESS) on CHAIN_ID in
 # the CoW Protocol orderbook: a fixed stablecoin swap of 0.01 EURC for at least
 # 0.0099 EURe, with the Safe as the receiver. The order uses pre-signing, so it
 # only becomes valid once the Safe calls GPv2Settlement.setPreSignature.
 #
-# Creates or overwrites transactions/<CHAIN_ID>/allowed/cow-swap-trade.json
+# Creates or overwrites transactions/generated/cow-swap-trade-<CHAIN_ID>.json
 # with the Safe transaction that does this: a batch, through MultiSendCallOnly,
 # of an approval of exactly the order's sell amount to the GPv2VaultRelayer and
-# the pre-signature of the order. The file is a test transaction file like any
-# other, but its order UID contains SAFE_ADDRESS and expires, so it is
-# git-ignored and must be recreated right before proposing the allowed set.
+# the pre-signature of the order. Unlike a template, the file is only valid on
+# CHAIN_ID, which it sets, and its order UID contains SAFE_ADDRESS and expires,
+# so it is git-ignored and must be recreated right before proposing it.
 #
 # All order parameters are fixed and the order is valid until the end of the
 # next full hour, so the order, and with it the file, is the same for every run
@@ -44,11 +44,11 @@ ORDER_TYPEHASH=0xd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e48
 # keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
 COW_DOMAIN_TYPEHASH=0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f
 
-(( $# == 1 )) || die "usage: create-cow-order.sh CHAIN_ID"
-chain_id=$1
+(( $# == 0 )) || die "usage: create-cow-order.sh"
 
 load_dotenv
 require_env SAFE_ADDRESS
+chain_id=$(chain_id)
 [[ $SAFE_ADDRESS =~ ^0x[0-9a-fA-F]{40}$ ]] \
   || die "SAFE_ADDRESS is not an address: \"$SAFE_ADDRESS\""
 
@@ -159,7 +159,7 @@ data=$(
   )"
 )
 
-file=$TESTING_ROOT/transactions/$chain_id/allowed/cow-swap-trade.json
+file=$TESTING_ROOT/transactions/generated/cow-swap-trade-$chain_id.json
 mkdir -p -- "$(dirname -- "$file")"
 jq -n \
   --arg chain_id "$(cast to-hex "$chain_id")" \
@@ -168,23 +168,19 @@ jq -n \
   --arg data "$data" \
   --arg note "Pre-signs CoW Swap order $uid, which sells 0.01 EURC ($sell_token) for at least 0.0099 EURe ($buy_token), with the Safe as the receiver, valid until $valid_until. Batches approve($GPV2_VAULT_RELAYER, $SELL_AMOUNT), exactly the order's sell amount to the GPv2VaultRelayer, so that R-4.5 does not apply, and GPv2Settlement.setPreSignature(orderUid, true). The batch is a DELEGATECALL to MultiSendCallOnly v1.4.1, which writes no Safe storage (R-4.2). The order was created for the Safe under test: its UID contains the Safe's address and validTo." '
   {
-    request: {
-      transaction: {
-        chainId: $chain_id,
-        safe: $safe,
-        to: $to,
-        value: "0x0",
-        data: $data,
-        operation: 1,
-        safeTxGas: "0x0",
-        baseGas: "0x0",
-        gasPrice: "0x0",
-        gasToken: "0x0000000000000000000000000000000000000000",
-        refundReceiver: "0x0000000000000000000000000000000000000000",
-        nonce: "0x0"
-      }
+    transaction: {
+      chainId: $chain_id,
+      safe: $safe,
+      to: $to,
+      value: "0x0",
+      data: $data,
+      operation: 1,
+      safeTxGas: "0x0",
+      baseGas: "0x0",
+      gasPrice: "0x0",
+      gasToken: "0x0000000000000000000000000000000000000000",
+      refundReceiver: "0x0000000000000000000000000000000000000000"
     },
-    response: {verdict: "secure"},
     metadata: {note: $note}
   }
 ' >"$file"
