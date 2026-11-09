@@ -19,7 +19,7 @@ This is deliberately not an automated test suite. The scripts propose transactio
 
 Steps, each a separate PR:
 
-1. Scaffold `testing/` with the shared bash library (env validation, network maps, loading and hashing a test transaction file), the format check for test transaction files, and their self-tests, plus `Justfile`/README/AGENTS wiring.
+1. Scaffold `testing/` with the shared bash library (env validation, network maps, loading and hashing a test transaction file), plus `Justfile`/README/AGENTS wiring.
 2. Add the Gnosis Chain test transaction collection, including the unsupported-network case.
 3. Add the Safenet relayer proposal script with explorer links.
 4. Add the CoW Swap order script.
@@ -45,7 +45,7 @@ New top-level `testing/` directory, sibling to `governance/`. The scripts are op
 | `0xa11cea11cea11cea11cea11cea11cea11cea11ce` | `owners[0]` (receiver A) |
 | `0xb0bb0b0bb0b0bb0b0bb0b0bb0b0bb0b0bb0b0bb0` | `owners[1]` (receiver B) |
 
-- Placeholders are replaced in `safe`, `to` and `data`. In `data` they appear as ABI-encoded address words, so the 40 hex characters are replaced case-insensitively. They are chosen so that they can't plausibly occur by accident.
+- Placeholders are replaced with a case-insensitive find and replace of their 40 hex characters in the whole file, so they are replaced in `safe`, `to` and in `data`, where they appear as ABI-encoded address words. The replaced addresses are lowercase. They are chosen so that they can't plausibly occur by accident.
 - The Safe's owners are the transfer receivers, so test funds are never sent to an outside address. If the Safe has fewer than 2 owners, the scripts abort.
 - `nonce` is replaced with the Safe's current nonce. It can be overridden with `SAFE_NONCE`, but the owners are still read from the API.
 
@@ -92,12 +92,9 @@ testing/
 ├── lib/
 │   └── common.sh                # Shared helpers (sourced by all scripts)
 ├── scripts/
-│   ├── check-transactions.sh    # Validates the format of test transaction files
 │   ├── create-cow-order.sh      # Creates a CoW presign order → updates <chainId>/allowed/cow-swap-trade.json
 │   ├── propose-safe-wallet.sh   # <path>... → Safe Transaction Service
 │   └── propose-safenet.sh       # <path>... → Safenet relayer, prints explorer links
-├── test/
-│   └── common.test.sh           # Offline self-test of lib/common.sh (substitution, hashing)
 └── transactions/
     ├── 1/                       # Ethereum Mainnet
     ├── 10/                      # Unsupported network (R-4.0 case only)
@@ -143,12 +140,12 @@ The same structure as the [sentinel test vectors](https://github.com/safe-resear
 - Setup files have no `response`. They are not test cases, only preconditions.
 - The file name (without `.json`) is the case name printed by the scripts.
 
-`check-transactions.sh` validates all files with `jq`: required fields and types, checksummed or lowercase 20-byte addresses, hex quantities, `operation` ∈ {0, 1}, `verdict`/`rule` consistency, placeholder `safe`. No real Safe address can appear in a committed file. It runs in `just check`.
+The files are not validated by a script: the scripts assume that they follow this format.
 
 ### `lib/common.sh`
 
 - `require_env <VAR>...`: fail with a clear error if any variable is unset or empty.
-- `load_safe_tx <file>`: reads `request.transaction`, substitutes the placeholders and `nonce`, and outputs the transaction as JSON with decimal quantities.
+- `load_safe_tx <file>`: reads `request.transaction`, substitutes the placeholders and `nonce`, and outputs the transaction as JSON. All other fields are kept as written, so the transaction can be forwarded as is.
 - `safe_tx_hash <tx-json>`: EIP-712 `SafeTx` hash computed with `cast abi-encode` + `cast keccak`.
 - `collect_files <path>...`: expands directories to their `*.json` files (sorted), so that `transactions/100/allowed` and single files both work.
 - `tx_service_network <chainId>`: `1 → eth`, `100 → gno`, `42161 → arb1`. Fails otherwise.
@@ -238,18 +235,11 @@ Like every other file, it uses the placeholder `safe`. The calldata doesn't cont
 
 Example: `just testing-propose-safenet testing/transactions/100/allowed testing/transactions/100/blocked testing/transactions/10`.
 
-`just check` gains `shellcheck` over `testing/**/*.sh` and `check-transactions.sh`. `just test` gains `testing/test/common.test.sh`.
+`just check` gains `shellcheck` over `testing/**/*.sh`.
 
 ### Testing
 
-`testing/test/common.test.sh` runs offline and checks:
-
-- `safe_tx_hash` against a known vector: a real Safe transaction with a known `safeTxHash` (e.g. the one from the explorer example `0x448ff179…f3bc` on chain 1), hardcoded with all its fields.
-- `load_safe_tx` substitution of the Safe and owner placeholders in `safe`, `to` and `data`, and of `nonce`, using a fixed `safe_info` response. Non-placeholder addresses are left untouched.
-- `collect_files` with files and directories.
-- Network maps, including failure on an unsupported chain.
-
-`check-transactions.sh` protects the collection itself. Each file's `metadata.note` explains the calldata, and the PR description shows the decoded calldata (`cast 4byte-decode`) of every new file, so that reviewers can check it. The proposal scripts are verified manually against a test Safe, as documented in each PR's description.
+There are no self-tests for the scripts and no format check for the collection. Each file's `metadata.note` explains the calldata, and the PR description shows the decoded calldata (`cast 4byte-decode`) of every new file, so that reviewers can check it. The proposal scripts are verified manually against a test Safe, as documented in each PR's description.
 
 ---
 
@@ -259,13 +249,11 @@ Example: `just testing-propose-safenet testing/transactions/100/allowed testing/
 
 - `epics/2026_10_16_testing_utils.md`.
 
-### Phase 1 — Scaffold, shared library and format check
+### Phase 1 — Scaffold and shared library
 
 - `testing/README.md` (purpose; requirements: Foundry, `jq`, `curl`, `shellcheck`; file format; env overview; flows filled in by later phases), `testing/.env.sample`, `.gitignore` entry for `testing/.env`.
 - `testing/lib/common.sh`: `require_env`, `collect_files`, `load_safe_tx`, `safe_tx_hash`, `tx_service_network`, `safe_info`.
-- `testing/scripts/check-transactions.sh`.
-- `testing/test/common.test.sh`.
-- Root `Justfile` (`check`, `test`), root `README.md` and `AGENTS.md` Architecture sections.
+- Root `Justfile` (`check`), root `README.md` and `AGENTS.md` Architecture sections.
 
 Must land first. All later phases depend on it.
 
@@ -312,8 +300,8 @@ Depends on phase 1. Optional: Safenet testing works without it. It is a convenie
 - **Owners as receivers.** We assume that sending 0.01 USDC to its own owners is acceptable for any Safe under test, and that owners being in the expected target set after a single setup transfer is enough for Sentinels (§ 2.4).
 - **Expected verdicts for allowed cases.** We assume that "allowed" means the Sentinels vote `secure`. For `reset-fallback-handler` this follows from the R-4.1 exception. For transfers to known receivers, it follows from R-4.3 and the prior setup transfer (§ 2.4). Production Sentinels may reasonably need more history. A single prior transfer is the minimum this tooling sets up.
 - **Setup execution.** The setup transaction must actually be executed. If the Safe already has the Safenet guard enabled, it goes through Safenet like any other transaction. If that blocks it, owners need the escape hatch or must run setup before enabling the guard. The README will document this.
-- **Placeholders.** The three placeholder addresses are assumed never to be real addresses. Substitution only touches `safe`, `to` and `data`.
-- **Unsupported-network case.** It reuses `SAFE_ADDRESS` with `chainId` 10, so its `safeTxHash` and explorer link use chain ID 10. We assume that the relayer forwards any `chainId` (the proxy's `/tx` schema doesn't restrict it) and accepts hex quantities. If it doesn't, `load_safe_tx` already outputs decimals.
+- **Placeholders.** The three placeholder addresses are assumed never to be real addresses. Substitution is a plain text replacement over the whole file.
+- **Unsupported-network case.** It reuses `SAFE_ADDRESS` with `chainId` 10, so its `safeTxHash` and explorer link use chain ID 10. We assume that the relayer forwards any `chainId` (the proxy's `/tx` schema doesn't restrict it) and accepts hex quantities (its schema parses them with `z.coerce.bigint()`).
 - **Compatibility with the test vectors.** The files omit `request.block` and use a placeholder Safe, so they are not directly valid test vectors. Upstreaming them would mean adding a block and a real Safe.
 - **Safe Transaction Service API key.** We assume that `api.safe.global` requires an API key (`SAFE_API_KEY`). If it doesn't for proposals, the variable becomes optional.
 - **Delegate setup.** Registering the proposer as a delegate is a one-time manual step via Safe{Wallet} or the delegates API. It is documented, not scripted.
