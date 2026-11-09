@@ -37,7 +37,7 @@ New top-level `testing/` directory, sibling to `governance/`. The scripts are op
 
 **Test transactions are data, not code.** Each case is one JSON file under `testing/transactions/<chainId>/<set>/<case>.json` with all transaction data present. You can read, review and diff a file without running anything. New cases are added by copying a file, and the cases can be reused with other tools such as the sentinel test vectors runner. The only generated transaction is the CoW Swap trade, which has its own script that refreshes its file in the collection (see below).
 
-**Safe-specific values are filled in at proposal time.** A test file can't know which Safe it will run against, so it uses placeholder addresses. The proposal scripts replace them using a single read of the Safe from the Safe Transaction Service (`GET https://api.safe.global/tx-service/<network>/api/v1/safes/<SAFE_ADDRESS>/`, fields `nonce` and `owners`). The scripts make no RPC calls. The Safe's chain is given by `CHAIN_ID`.
+**Safe-specific values are filled in at proposal time.** A test file can't know which Safe it will run against, so it uses placeholder addresses. The proposal scripts replace them using a read of the Safe from the Safe Transaction Service (`GET https://api.safe.global/tx-service/<network>/api/v1/safes/<SAFE_ADDRESS>/`, fields `nonce` and `owners`). The scripts make no RPC calls. There is no chain setting: each transaction is proposed on the chain of its file (`chainId`), for `SAFE_ADDRESS` on that chain, and the Safe is read once per chain. For a chain on which the Safe can't be read (e.g. it isn't deployed there), its nonce and owners can be set per chain ID as JSON in `SAFE_INFO` instead.
 
 | Placeholder                                  | Replaced with            |
 | -------------------------------------------- | ------------------------ |
@@ -47,7 +47,7 @@ New top-level `testing/` directory, sibling to `governance/`. The scripts are op
 
 - Placeholders are replaced with a case-insensitive find and replace of their 40 hex characters in the whole file, so they are replaced in `safe`, `to` and in `data`, where they appear as ABI-encoded address words. The replaced addresses are lowercase. They are chosen so that they can't plausibly occur by accident.
 - The Safe's owners are the transfer receivers, so test funds are never sent to an outside address. If the Safe has fewer than 2 owners, the scripts abort.
-- `nonce` is replaced with the Safe's current nonce. It can be overridden with `SAFE_NONCE`, but the owners are still read from the API.
+- `nonce` is replaced with the Safe's current nonce on the chain of the file. To use another nonce, set the chain's nonce and owners in `SAFE_INFO`.
 
 All other fields (`chainId`, `value`, `operation`, gas and refund parameters) are used exactly as written.
 
@@ -64,7 +64,7 @@ testing/transactions/<chainId>/<set>/*.json ─┬─► propose-safe-wallet.sh 
                                              └─► propose-safenet.sh <path>...
 ```
 
-**Safe transaction hashes are computed locally.** They use EIP-712 with the `chainId` + `verifyingContract` domain used by Safe >= 1.3.0, which are the only singleton versions the Charter accepts. They are not read via `getTransactionHash`. That way, the unsupported-network case (whose Safe doesn't exist on that chain) can be hashed, and no RPC is needed at all.
+**Safe transaction hashes are computed locally.** They use EIP-712 with the `chainId` + `verifyingContract` domain used by Safe >= 1.3.0, which are the only singleton versions the Charter accepts. They are not read via `getTransactionHash`. That way, no RPC is needed at all.
 
 **Safenet submission uses the relayer's full-transaction endpoint (`POST /tx`).** This is the endpoint the Safenet explorer posts to. Unlike the `/propose` webhook endpoint, it doesn't need the transaction to exist in the Safe Transaction Service (which is only used to read the nonce). Because the relayer returns an empty `202`, the script derives the `safeTxHash` itself to print the explorer link.
 
@@ -148,8 +148,8 @@ The files are not validated by a script: the scripts assume that they follow thi
 - `load_safe_tx <file>`: reads `request.transaction`, substitutes the placeholders and `nonce`, and outputs the transaction as JSON. All other fields are kept as written, so the transaction can be forwarded as is.
 - `safe_tx_hash <tx-json>`: EIP-712 `SafeTx` hash computed with `cast abi-encode` + `cast keccak`.
 - `collect_files <path>...`: expands directories to their `*.json` files (sorted), so that `transactions/100/allowed` and single files both work.
-- `tx_service_network <chainId>`: `1 → eth`, `100 → gno`, `42161 → arb1`. Fails otherwise.
-- `safe_info`: reads `nonce` and `owners` of `SAFE_ADDRESS` once from the Safe Transaction Service on `CHAIN_ID`. Applies `SAFE_NONCE` if set and aborts if there are fewer than 2 owners.
+- `tx_service_network <chainId>`: `1 → eth`, `10 → oeth` (unsupported-network case), `100 → gno`, `42161 → arb1`. Fails otherwise.
+- `safe_info <chainId>`: reads `nonce` and `owners` of `SAFE_ADDRESS` on `chainId` from the chain's entry in `SAFE_INFO`, if there is one, and from the Safe Transaction Service otherwise. Aborts if there are fewer than 2 owners.
 - `cow_network <chainId>` (phase 4): `1 → mainnet`, `100 → xdai`, `42161 → arbitrum_one`. Fails otherwise.
 
 ### Environment variables
@@ -157,10 +157,9 @@ The files are not validated by a script: the scripts assume that they follow thi
 | Variable | Used by | Description |
 | --- | --- | --- |
 | `SAFE_ADDRESS` | all | Safe under test. Replaces the placeholder Safe. Its first two owners replace the receiver placeholders. |
-| `CHAIN_ID` | all | Chain ID of the Safe (`1`, `100` or `42161`). Selects the Safe Transaction Service and CoW API network. |
-| `SAFE_NONCE` | proposal scripts | Optional nonce override. |
+| `SAFE_INFO` | proposal scripts | Optional JSON with the Safe's nonce and owners per chain ID (`{"10":{"nonce":0,"owners":["0x…","0x…"]}}`). Chains listed are not read from the Safe Transaction Service. |
 | `PROPOSER_PRIVATE_KEY` | `propose-safe-wallet.sh` | Key of a delegate (or owner) of the Safe. Signs the proposal. |
-| `SAFE_API_KEY` | proposal scripts | API key for `api.safe.global` (sent as `Authorization: Bearer`). |
+| `SAFE_API_KEY` | proposal scripts | Optional API key for `api.safe.global` (sent as `Authorization: Bearer`). Without it, reads are limited to 1 request per minute, which is enough to test one chain per run. |
 | `SAFENET_RELAYER_URL` | `propose-safenet.sh` | Full relayer endpoint URL (e.g. `https://<proxy>/tx`). The same value as the explorer's relayer setting. |
 | `SAFENET_EXPLORER_URL` | `propose-safenet.sh` | Explorer base URL (default `https://safenet-explorer.eth.limo`). |
 | `COW_SELL_TOKEN` | `create-cow-order.sh` | Token sold by the CoW order. |
@@ -189,7 +188,7 @@ The test token on each chain is the canonical USDC deployment. The amount is a f
 
 The seven static files exist for each of `1/`, `100/` and `42161/`. They differ only in `chainId` and the USDC address. `cow-swap-trade.json` is created per chain by the script.
 
-`10/blocked/unsupported-network-cancellation.json` is the same as `allowed/cancellation.json`, but with `chainId` 10 (Optimism). A cancellation is valid on any network and for any Safe, and it has no token or receiver. The only reason for it to be insecure is R-4.0, so the verdict tests the network rule alone. Comparing it with `allowed/cancellation.json` shows that the network is the only difference. It is only meaningful for `propose-safenet.sh`.
+`10/blocked/unsupported-network-cancellation.json` is the same as `allowed/cancellation.json`, but with `chainId` 10 (Optimism). A cancellation is valid on any network and for any Safe, and it has no token or receiver. The only reason for it to be insecure is R-4.0, so the verdict tests the network rule alone. Comparing it with `allowed/cancellation.json` shows that the network is the only difference. Like every file, it is proposed for `SAFE_ADDRESS` on its own chain, so it needs the Safe's nonce and owners on Optimism. If the Safe isn't deployed there, they are set in `SAFE_INFO`.
 
 The owner change uses `addOwnerWithThreshold` rather than `swapOwner`, because `swapOwner` needs the Safe-specific `prevOwner`/`oldOwner` in its calldata, and the files are static.
 
@@ -199,7 +198,7 @@ The setup file is identical to the MultiSend test on purpose. Executing it makes
 
 For each file:
 
-1. `load_safe_tx`. Skip the file with a notice if its `chainId` differs from `CHAIN_ID`, because the Safe Transaction Service can't hold it. This applies to the unsupported-network case.
+1. `load_safe_tx` with the Safe's nonce and owners on the chain of the file.
 2. Compute `safeTxHash` locally and sign it with `cast wallet sign --no-hash --private-key "$PROPOSER_PRIVATE_KEY"`.
 3. `POST https://api.safe.global/tx-service/<network>/api/v2/safes/<SAFE_ADDRESS>/multisig-transactions/` with the Safe transaction fields plus `contractTransactionHash`, `sender` (the proposer address from `cast wallet address`), `signature`, and `origin` (`{"name":"safenet-utils test: <case>"}`), so the case is recognisable in the Safe{Wallet} queue.
 4. Print one line per file: case, expected verdict (and rule), `safeTxHash`, HTTP status. Keep going after a failure and exit non-zero at the end if any proposal failed.
@@ -214,16 +213,18 @@ For each file:
 
 The relayer always answers `202` with an empty body, even for invalid input. Only a non-2xx response is treated as an error. The README points out that the explorer link is the way to confirm that a proposal landed.
 
-### CoW Swap order (`create-cow-order.sh`)
+### CoW Swap order (`create-cow-order.sh <chainId>`)
+
+The chain is a required argument, because there is no test transaction file to take it from.
 
 1. `POST https://api.cow.fi/<cow_network>/api/v1/quote` with `sellToken`, `buyToken`, `sellAmountBeforeFee = COW_SELL_AMOUNT`, `kind: sell`, `from = receiver = SAFE_ADDRESS`, `signingScheme: presign` and `validTo = now + COW_VALID_FOR`.
 2. `POST https://api.cow.fi/<cow_network>/api/v1/orders` with the quoted order (fee folded into `sellAmount`, fee `0`), `signingScheme: presign` and `signature: SAFE_ADDRESS`. The response is the order UID.
-3. Create or overwrite `testing/transactions/<CHAIN_ID>/allowed/cow-swap-trade.json` (verdict `secure`, `metadata.note` with the order UID, the tokens, the amounts and `validTo`). The file contains a MultiSendCallOnly batch of:
+3. Create or overwrite `testing/transactions/<chainId>/allowed/cow-swap-trade.json` (verdict `secure`, `metadata.note` with the order UID, the tokens, the amounts and `validTo`). The file contains a MultiSendCallOnly batch of:
    - `approve(GPv2VaultRelayer, sellAmount)`, with the exact order sell amount and not unlimited, so that R-4.5 does not apply;
    - `GPv2Settlement.setPreSignature(orderUid, true)`.
 4. Print the file path and the CoW Explorer link of the order.
 
-Like every other file, it uses the placeholder `safe`. The calldata doesn't contain the Safe address, but the order UID does: the order is only valid for the `SAFE_ADDRESS` that created it, until `validTo`. The file is therefore git-ignored (`testing/transactions/*/allowed/cow-swap-trade.json`). The README says to run `just testing-cow-order` right before proposing the `allowed` set. If it hasn't been run, there is simply no CoW case in the set. GPv2Settlement (`0x9008D19f58AAbD9eD0D60971565AA8510560ab41`) and GPv2VaultRelayer (`0xC92E8bdf79f0507f65a392b0ab4667716BFE0110`) are the same on all three supported chains and are kept as constants.
+Like every other file, it uses the placeholder `safe`. The calldata doesn't contain the Safe address, but the order UID does: the order is only valid for the `SAFE_ADDRESS` that created it, until `validTo`. The file is therefore git-ignored (`testing/transactions/*/allowed/cow-swap-trade.json`). The README says to run `just testing-cow-order <chainId>` right before proposing the `allowed` set. If it hasn't been run, there is simply no CoW case in the set. GPv2Settlement (`0x9008D19f58AAbD9eD0D60971565AA8510560ab41`) and GPv2VaultRelayer (`0xC92E8bdf79f0507f65a392b0ab4667716BFE0110`) are the same on all three supported chains and are kept as constants.
 
 ### Just recipes
 
@@ -231,7 +232,7 @@ Like every other file, it uses the placeholder `safe`. The calldata doesn't cont
 | ------------------------------------ | ---------------------------------- |
 | `testing-propose-safe-wallet *paths` | `propose-safe-wallet.sh {{paths}}` |
 | `testing-propose-safenet *paths`     | `propose-safenet.sh {{paths}}`     |
-| `testing-cow-order`                  | `create-cow-order.sh`              |
+| `testing-cow-order chain_id`         | `create-cow-order.sh {{chain_id}}` |
 
 Example: `just testing-propose-safenet testing/transactions/100/allowed testing/transactions/100/blocked testing/transactions/10`.
 
@@ -267,6 +268,7 @@ Depends on phase 1. Gnosis Chain comes first because it is cheap to run the setu
 ### Phase 3 — Safenet proposal script
 
 - `testing/scripts/propose-safenet.sh`, `testing-propose-safenet` recipe, README section "Propose to Safenet".
+- `SAFE_INFO`, to set the Safe's nonce and owners per chain (needed for the unsupported-network case if the Safe isn't deployed on Optimism).
 
 Depends on phase 1. Can be reviewed against the phase 2 files. Until phase 6 lands, the README explains how to create the setup transaction by hand in Safe{Wallet} (two small USDC transfers) so that owners can execute it.
 
@@ -301,9 +303,9 @@ Depends on phase 1. Optional: Safenet testing works without it. It is a convenie
 - **Expected verdicts for allowed cases.** We assume that "allowed" means the Sentinels vote `secure`. For `reset-fallback-handler` this follows from the R-4.1 exception. For transfers to known receivers, it follows from R-4.3 and the prior setup transfer (§ 2.4). Production Sentinels may reasonably need more history. A single prior transfer is the minimum this tooling sets up.
 - **Setup execution.** The setup transaction must actually be executed. If the Safe already has the Safenet guard enabled, it goes through Safenet like any other transaction. If that blocks it, owners need the escape hatch or must run setup before enabling the guard. The README will document this.
 - **Placeholders.** The three placeholder addresses are assumed never to be real addresses. Substitution is a plain text replacement over the whole file.
-- **Unsupported-network case.** It reuses `SAFE_ADDRESS` with `chainId` 10, so its `safeTxHash` and explorer link use chain ID 10. We assume that the relayer forwards any `chainId` (the proxy's `/tx` schema doesn't restrict it) and accepts hex quantities (its schema parses them with `z.coerce.bigint()`).
+- **Unsupported-network case.** It is proposed for `SAFE_ADDRESS` on chain ID 10, so it needs the Safe's nonce and owners on Optimism (from the Safe Transaction Service or `SAFE_INFO`), and its `nonce`, `safeTxHash` and explorer link are those of chain ID 10. We assume that the relayer forwards any `chainId` (the proxy's `/tx` schema doesn't restrict it) and accepts hex quantities (its schema parses them with `z.coerce.bigint()`).
 - **Compatibility with the test vectors.** The files omit `request.block` and use a placeholder Safe, so they are not directly valid test vectors. Upstreaming them would mean adding a block and a real Safe.
-- **Safe Transaction Service API key.** We assume that `api.safe.global` requires an API key (`SAFE_API_KEY`). If it doesn't for proposals, the variable becomes optional.
+- **Safe Transaction Service API key.** `api.safe.global` allows 1 request per minute without an API key, which is enough for one read of the Safe per chain, so `SAFE_API_KEY` is optional for reading. We assume that the same holds for proposals (phase 6). If it doesn't, `propose-safe-wallet.sh` requires it.
 - **Delegate setup.** Registering the proposer as a delegate is a one-time manual step via Safe{Wallet} or the delegates API. It is documented, not scripted.
 - **CoW order API details.** We assume that the quote → order flow with fee `0` and the fee folded into `sellAmount` is still what the CoW API requires. This will be verified in phase 4.
 - **Additional cases (not in scope, easy to add as files later):** a settings change inside a MultiSend (R-4.1, which requires a non-batched transaction), a max-`uint256` approval (R-4.5), and a transfer to a lookalike of a known receiver (R-4.3).

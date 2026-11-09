@@ -86,59 +86,79 @@ collect_files() {
 
 # tx_service_network CHAIN_ID
 #
-# Prints the Safe Transaction Service network name of a supported chain.
+# Prints the Safe Transaction Service network name of a chain with test
+# transactions: the networks of the Charter, and Optimism for the
+# unsupported-network case.
 tx_service_network() {
   case $1 in
     1) echo eth ;;
+    10) echo oeth ;;
     100) echo gno ;;
     42161) echo arb1 ;;
-    *) die "unsupported chain ID \"$1\" (expected 1, 100 or 42161)" ;;
+    *) die "no Safe Transaction Service network for chain ID \"$1\" (expected 1, 10, 100 or 42161)" ;;
   esac
 }
 
-# safe_info
+# safe_info CHAIN_ID
 #
-# Reads SAFE_ADDRESS on CHAIN_ID from the Safe Transaction Service and prints
-# {"address", "nonce", "owners"}, with the nonce as a decimal string. SAFE_NONCE,
-# if set, replaces the nonce. Fails if the Safe has fewer than 2 owners, because
-# its first two owners are the receivers of the test transactions.
+# Prints {"address", "nonce", "owners"} of SAFE_ADDRESS on CHAIN_ID, with the
+# nonce as a decimal string. The nonce and owners are taken from the chain's
+# entry in SAFE_INFO (JSON keyed by chain ID), if there is one, and are read
+# from the Safe Transaction Service otherwise (with SAFE_API_KEY, if set;
+# without it, the service is rate limited). Fails if the Safe has fewer than 2
+# owners, because its first two owners are the receivers of the test
+# transactions.
 safe_info() {
-  require_env SAFE_ADDRESS CHAIN_ID SAFE_API_KEY
+  local chain_id=$1
+  require_env SAFE_ADDRESS
 
   [[ $SAFE_ADDRESS =~ ^0x[0-9a-fA-F]{40}$ ]] \
     || die "SAFE_ADDRESS is not an address: \"$SAFE_ADDRESS\""
-  if [[ -n ${SAFE_NONCE:-} && ! $SAFE_NONCE =~ ^[0-9]+$ ]]; then
-    die "SAFE_NONCE is not a decimal number: \"$SAFE_NONCE\""
+
+  local network response info="" owners
+  local -a auth=()
+
+  if [[ -n ${SAFE_INFO:-} ]]; then
+    info=$(
+      jq -c --arg chain "$chain_id" --arg address "$SAFE_ADDRESS" '
+        .[$chain] // empty
+        | {address: $address, nonce: (.nonce | tostring), owners}
+      ' <<<"$SAFE_INFO"
+    ) || die "failed to parse SAFE_INFO as JSON"
+    if [[ -n $info ]]; then
+      jq -e '
+        (.nonce | test("^[0-9]+$"))
+        and (.owners | type == "array" and all(type == "string" and test("^0x[0-9a-fA-F]{40}$")))
+      ' <<<"$info" >/dev/null \
+        || die "invalid entry for chain $chain_id in SAFE_INFO (expected a decimal \"nonce\" and an array of \"owners\" addresses)"
+    fi
   fi
 
-  local network response info owners
-  network=$(tx_service_network "$CHAIN_ID") || exit 1
+  if [[ -z $info ]]; then
+    network=$(tx_service_network "$chain_id") || exit 1
 
-  # The API key is passed on stdin so that it does not show up in the process
-  # list.
-  response=$(
-    curl -fsS -H @- "$SAFE_TX_SERVICE_URL/$network/api/v1/safes/$SAFE_ADDRESS/" \
-      <<<"Authorization: Bearer $SAFE_API_KEY"
-  ) || die "failed to read Safe $SAFE_ADDRESS from the Safe Transaction Service ($network)"
-
-  info=$(
-    jq -c --arg nonce "${SAFE_NONCE:-}" \
-      '{address, nonce: (if $nonce != "" then $nonce else .nonce | tostring end), owners}' \
-      <<<"$response"
-  )
+    # The API key, if any, is passed on stdin so that it does not show up in the
+    # process list.
+    [[ -z ${SAFE_API_KEY:-} ]] || auth=(-H @-)
+    response=$(
+      curl -fsS "${auth[@]}" "$SAFE_TX_SERVICE_URL/$network/api/v1/safes/$SAFE_ADDRESS/" \
+        <<<"Authorization: Bearer ${SAFE_API_KEY:-}"
+    ) || die "failed to read Safe $SAFE_ADDRESS on chain $chain_id from the Safe Transaction Service ($network); set its nonce and owners in SAFE_INFO instead (see testing/.env.sample)"
+    info=$(jq -c '{address, nonce: (.nonce | tostring), owners}' <<<"$response")
+  fi
 
   owners=$(jq '.owners | length' <<<"$info")
   (( owners >= 2 )) \
-    || die "Safe $SAFE_ADDRESS has $owners owner(s), but the test transactions need 2 (its first two owners are the receivers)"
+    || die "Safe $SAFE_ADDRESS on chain $chain_id has $owners owner(s), but the test transactions need 2 (its first two owners are the receivers)"
 
   printf '%s\n' "$info"
 }
 
-# load_safe_tx FILE SAFE_INFO
+# load_safe_tx FILE INFO
 #
 # Prints the Safe transaction of a test transaction file, ready to be hashed and
 # proposed: the placeholders are replaced with the Safe and its first two owners
-# from SAFE_INFO (as printed by safe_info) and the nonce is the Safe's nonce (a
+# from INFO (as printed by safe_info) and the nonce is the Safe's nonce (a
 # decimal string). All other fields are kept as written.
 load_safe_tx() {
   local file=$1 info=$2
