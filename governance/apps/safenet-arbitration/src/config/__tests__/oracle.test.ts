@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 import { parseConfig } from "../oracle"
 
 describe("parseConfig", () => {
-  it("defaults to the Gnosis Chain testnet oracle", () => {
+  it("defaults to the Safenet production oracle", () => {
     expect(parseConfig({})).toEqual({
       chainId: 100,
-      oracleAddress: "0x544F12bAd6FF72564abBc7eA6494A2a4BdD0DDD0",
+      oracleAddress: "0x4F61B8832978e83b80D69551AEf07557DBE41d03",
       logBlockRange: 10000,
     })
   })

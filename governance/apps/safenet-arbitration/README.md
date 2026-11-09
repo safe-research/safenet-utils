@@ -15,7 +15,8 @@ RPC configuration of its own. It only accepts SDK messages from `https://app.saf
 ## Configuration
 
 The `SentinelOracle` to operate on is fixed at build time through Vite environment variables, documented in
-[`.env.sample`](./.env.sample). Unset or empty variables default to the current Gnosis Chain testnet deployment; copy
+[`.env.sample`](./.env.sample). Unset or empty variables default to the Safenet production deployment on Gnosis Chain
+([configuration](https://github.com/safe-research/safenet/blob/main/docs/configuration.md)); copy
 the file to `.env` to point the app at a different deployment.
 
 The chain ID and oracle address can also be overridden at runtime from the settings dialog (the cog next to the
