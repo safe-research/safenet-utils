@@ -50,6 +50,19 @@ export function disputeLog(eventName: ContractEventName<typeof sentinelOracleAbi
   return { address: CONFIG.oracleAddress, topics, data: data[eventName], blockNumber }
 }
 
+// A raw `Revealed` log of `sentinel`'s vote on request `id`.
+export function revealedLog(id: Hex, sentinel: Address, approved: boolean, reason = "", blockNumber = 15) {
+  const topics = encodeEventTopics({ abi: sentinelOracleAbi, eventName: "Revealed", args: { requestId: id, sentinel } })
+  const data = encodeAbiParameters([{ type: "bool" }, { type: "uint96" }, { type: "string" }], [approved, 0n, reason])
+  return {
+    address: CONFIG.oracleAddress,
+    topics: topics as Hex[],
+    data,
+    blockNumber,
+    transactionHash: `0x${"7e".repeat(32)}` as Hex,
+  }
+}
+
 export const SAFE_TRANSACTION: SafeTransaction = {
   chainId: 1n,
   safe: "0x5afe5afE5afE5afE5afE5aFe5aFe5Afe5Afe5AfE",
@@ -110,7 +123,12 @@ function matchesFilter(log: MockLog, { address, fromBlock, toBlock, topics }: Lo
 // `eth_call` answers the oracle's `getRequest` from `requests`. `txs.send` accepts every proposed transaction.
 export function mockOracleSdk(logs: MockLog[], requests: Record<Hex, RequestFixture>, latestBlock = 100) {
   const getBlockByNumber = vi.fn(async () => ({ number: latestBlock }))
-  const getPastLogs = vi.fn(async ([filter]: [LogFilter]) => logs.filter((log) => matchesFilter(log, filter)))
+  // Block numbers come back as hex quantities, as the Safe{Wallet} RPC returns them despite the SDK's `number` type.
+  const getPastLogs = vi.fn(async ([filter]: [LogFilter]) =>
+    logs
+      .filter((log) => matchesFilter(log, filter))
+      .map((log) => ({ ...log, blockNumber: `0x${log.blockNumber.toString(16)}` as unknown as number })),
+  )
   // Makes the next `getPastLogs` call for `address`'s logs fail, leaving queries for other contracts unaffected.
   const failNextLogsOf = (address: Address, error: Error) => {
     const fetchLogs = getPastLogs.getMockImplementation()!
