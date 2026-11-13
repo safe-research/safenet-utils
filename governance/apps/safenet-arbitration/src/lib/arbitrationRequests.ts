@@ -8,7 +8,7 @@ import {
   encodeFunctionData,
   type Hex,
 } from "viem"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { RequestState, sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
 
 export type ArbitrationRequest = {
@@ -106,7 +106,7 @@ async function getRequest(sdk: SafeAppsSDK, oracleAddress: Address, requestId: H
 // dispute settled after the searched blocks is still filtered out.
 export async function fetchArbitrationRequests(
   sdk: SafeAppsSDK,
-  config: OracleConfig,
+  config: AppConfig,
   previousFrom?: number,
 ): Promise<ArbitrationRequestsPage> {
   // Also the reference for estimating deadlines, so it's fetched for every page.

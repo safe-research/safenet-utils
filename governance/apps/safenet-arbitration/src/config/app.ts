@@ -1,7 +1,7 @@
 import { type Address, getAddress, isAddress } from "viem"
 import { type ZodType, z } from "zod"
 
-export type OracleConfig = {
+export type AppConfig = {
   chainId: number
   oracleAddress: Address
   logBlockRange: number
@@ -26,8 +26,6 @@ const chainIdSchema = z.coerce.number().int().positive()
 
 // Only http(s) URLs, since the values are used as link targets and fetched.
 const httpUrlSchema = z.url({ protocol: /^https?$/ })
-// Without trailing slashes, so paths can be appended.
-const baseUrlSchema = httpUrlSchema.transform((url) => url.replace(/\/+$/, ""))
 
 // Defaults point at the Safenet production (Aegis Network, Gnosis Chain) `SentinelOracle`, the public Safenet Explorer
 // and the sentinel list published in safe-fndn/safenet-data; keep in sync with `.env.sample`.
@@ -35,14 +33,14 @@ const envSchema = z.object({
   VITE_CHAIN_ID: emptyToDefault(chainIdSchema, "100"),
   VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0x4F61B8832978e83b80D69551AEf07557DBE41d03"),
   VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
-  VITE_SAFENET_EXPLORER_URL: emptyToDefault(baseUrlSchema, "https://safenet-explorer.eth.limo"),
+  VITE_SAFENET_EXPLORER_URL: emptyToDefault(httpUrlSchema, "https://safenet-explorer.eth.limo"),
   VITE_SENTINEL_INFO_URL: emptyToDefault(
     httpUrlSchema,
     "https://raw.githubusercontent.com/safe-fndn/safenet-data/main/assets/sentinel-info.json",
   ),
 })
 
-export function parseConfig(env: Record<string, unknown>): OracleConfig {
+export function parseConfig(env: Record<string, unknown>): AppConfig {
   const result = envSchema.safeParse(env)
   if (!result.success) {
     throw new Error(`Invalid app config:\n${z.prettifyError(result.error)}`)
@@ -60,11 +58,11 @@ export const config = parseConfig(import.meta.env)
 
 // The part of the config that can be overridden at runtime from the settings dialog; empty values reset to the
 // build-time config. Missing values do too, so overrides stored before a setting existed still parse.
-export const oracleSettingsSchema = z.object({
+export const appSettingsSchema = z.object({
   chainId: emptyToDefault(chainIdSchema, config.chainId),
   oracleAddress: emptyToDefault(checkedAddressSchema, config.oracleAddress),
-  explorerUrl: emptyToDefault(baseUrlSchema, config.explorerUrl),
+  explorerUrl: emptyToDefault(httpUrlSchema, config.explorerUrl),
   sentinelInfoUrl: emptyToDefault(httpUrlSchema, config.sentinelInfoUrl),
 })
 
-export type OracleSettings = z.infer<typeof oracleSettingsSchema>
+export type AppSettings = z.infer<typeof appSettingsSchema>

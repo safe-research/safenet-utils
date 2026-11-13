@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { encodeRuling } from "@/lib/rulings"
 import { RequestState } from "@/abi/sentinelOracleAbi"
@@ -309,13 +309,16 @@ describe("ArbitrationRequestList", () => {
       expect(votes.getByText(OTHER)).toBeDefined()
     })
 
-    it("still shows the votes when the sentinel list fails to load", async () => {
+    it("silently falls back to addresses when the sentinel list fails to load", async () => {
       fetchSentinelInfo.mockResolvedValueOnce(new Response("", { status: 503 }))
       const votes = await renderVotes()
 
-      expect(await votes.findByText("Sentinel names unavailable: HTTP 503")).toBeDefined()
+      await waitFor(() => expect(fetchSentinelInfo).toHaveBeenCalled())
+      // Let the failed request settle before checking nothing was shown for it.
+      await new Promise((resolve) => setTimeout(resolve, 0))
       expect(votes.getByText(SENTINEL)).toBeDefined()
       expect(votes.queryByText("Candide")).toBeNull()
+      expect(votes.queryByText(/unavailable|HTTP 503/)).toBeNull()
     })
   })
 

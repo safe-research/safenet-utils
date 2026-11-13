@@ -1,5 +1,5 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { useRequestVotes } from "@/hooks/useRequestVotes"
 import { useSentinelLabels } from "@/hooks/useSentinelLabels"
 import { ExternalLink } from "@/components/ExternalLink"
@@ -15,12 +15,12 @@ export function VoteDetails({
   request,
 }: {
   sdk: SafeAppsSDK
-  config: OracleConfig
+  config: AppConfig
   request: ArbitrationRequest
 }) {
   const { data: votes, error, isPending } = useRequestVotes(sdk, config, request)
-  // Names are a convenience: without them, sentinels are still shown by address.
-  const { data: labels, error: labelsError } = useSentinelLabels(config.sentinelInfoUrl)
+  // Names are a convenience: without them (e.g. if the list fails to load), sentinels are just shown by address.
+  const { data: labels } = useSentinelLabels(config.sentinelInfoUrl)
 
   if (isPending) {
     return <p className="text-muted-foreground">Loading sentinel votes…</p>
@@ -64,9 +64,6 @@ export function VoteDetails({
             ))}
           </tbody>
         </table>
-      )}
-      {labelsError && (
-        <p className="mt-1 text-sm text-muted-foreground">Sentinel names unavailable: {labelsError.message}</p>
       )}
     </section>
   )
