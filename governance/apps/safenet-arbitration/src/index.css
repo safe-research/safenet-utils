@@ -24,6 +24,7 @@
   --color-primary-foreground: var(--color-white);
   --color-danger: var(--color-red-600);
   --color-success: var(--color-green-700);
+  --color-warning: var(--color-amber-700);
 }
 
 /* Safe{Wallet} doesn't share its theme with Safe Apps, so follow the system color scheme, which matches
@@ -45,6 +46,7 @@
     --color-primary-foreground: var(--color-gray-900);
     --color-danger: var(--color-red-400);
     --color-success: var(--color-green-400);
+    --color-warning: var(--color-amber-400);
   }
 }
 

@@ -5,7 +5,7 @@ import { RulingForm } from "@/components/RulingForm"
 import { VoteDetails } from "@/components/VoteDetails"
 import type { OracleConfig } from "@/config/oracle"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
-import { RULING_LABELS, RULINGS, type Ruling } from "@/lib/rulings"
+import { RULING_COLORS, RULING_LABELS, RULINGS, type Ruling } from "@/lib/rulings"
 
 // Expanded view of a single request awaiting arbitration: the transaction under dispute, the sentinel votes on it and the
 // actions the arbitrator can take on it.
@@ -32,7 +32,7 @@ export function RequestDetails({
             type="button"
             onClick={() => setRuling(option)}
             aria-pressed={ruling === option}
-            className="rounded border border-border px-2 py-0.5 hover:bg-subtle aria-pressed:bg-selected"
+            className={`rounded border border-border px-2 py-0.5 hover:bg-subtle aria-pressed:bg-selected ${RULING_COLORS[option]}`}
           >
             {RULING_LABELS[option]}
           </button>

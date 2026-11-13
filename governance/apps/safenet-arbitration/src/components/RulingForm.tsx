@@ -4,7 +4,7 @@ import type { Hex } from "viem"
 import type { OracleConfig } from "@/config/oracle"
 import { useSubmitRuling } from "@/hooks/useSubmitRuling"
 import { shorten } from "@/lib/format"
-import { RULING_LABELS, type Ruling } from "@/lib/rulings"
+import { RULING_COLORS, RULING_LABELS, type Ruling } from "@/lib/rulings"
 
 export function RulingForm({
   sdk,
@@ -30,7 +30,9 @@ export function RulingForm({
 
   return (
     <form onSubmit={onSubmit} className="rounded border border-border-subtle bg-surface p-4">
-      <h3 className="mb-3 font-semibold">{RULING_LABELS[ruling]} ruling</h3>
+      <h3 className="mb-3 font-semibold">
+        Ruling: <span className={RULING_COLORS[ruling]}>{RULING_LABELS[ruling]}</span>
+      </h3>
       <label className="mb-3 block">
         <span className="mb-1 block text-sm text-muted-foreground">Rationale (recorded on-chain)</span>
         <textarea

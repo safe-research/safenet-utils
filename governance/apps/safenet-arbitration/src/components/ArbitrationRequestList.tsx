@@ -40,7 +40,7 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
             <tr>
               <th className="py-2 font-normal">Request ID</th>
               <th className="py-2 font-normal">Sponsor</th>
-              <th className="py-2 font-normal">Approve / Deny</th>
+              <th className="py-2 font-normal">Secure / Insecure</th>
               <th className="py-2 text-right font-normal">Deadline</th>
             </tr>
           </thead>
