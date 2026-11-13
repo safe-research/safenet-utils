@@ -1,6 +1,7 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { AppConfig } from "@/config/app"
 import { useRequestVotes } from "@/hooks/useRequestVotes"
+import { useSentinelLabels } from "@/hooks/useSentinelLabels"
 import { ExternalLink } from "@/components/ExternalLink"
 import { AddressValue } from "@/components/HexValue"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
@@ -18,6 +19,8 @@ export function VoteDetails({
   request: ArbitrationRequest
 }) {
   const { data: votes, error, isPending } = useRequestVotes(sdk, config, request)
+  // Names are a convenience: without them (e.g. if the list fails to load), sentinels are just shown by address.
+  const { data: labels } = useSentinelLabels(config.sentinelInfoUrl)
 
   if (isPending) {
     return <p className="text-muted-foreground">Loading sentinel votes…</p>
@@ -44,6 +47,7 @@ export function VoteDetails({
             {votes.map((vote) => (
               <tr key={vote.sentinel} className="align-top">
                 <td className="py-1 pr-4">
+                  {labels?.get(vote.sentinel) && <span className="mr-2">{labels.get(vote.sentinel)}</span>}
                   <AddressValue
                     chainId={config.chainId}
                     address={vote.sentinel}

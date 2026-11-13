@@ -20,9 +20,12 @@ The `SentinelOracle` to operate on is fixed at build time through Vite environme
 the file to `.env` to point the app at a different deployment.
 
 The same variables set the [Safenet Explorer](https://safenet-explorer.eth.limo) that each request's Safe transaction
-links to.
+links to, and the sentinel list (by default
+[`sentinel-info.json`](https://github.com/safe-fndn/safenet-data/blob/main/assets/sentinel-info.json) from
+safe-fndn/safenet-data, fetched raw) whose labels name the sentinels next to their votes. Sentinels missing from the
+list, or all of them if it fails to load, are shown by address only.
 
-The chain ID, oracle address and Safenet Explorer URL can also be overridden at runtime from the settings dialog (the cog next to the
+The chain ID, oracle address, Safenet Explorer URL and sentinel info URL can also be overridden at runtime from the settings dialog (the cog next to the
 headline, shown once connected to Safe{Wallet}). Leaving a field empty resets it to its build-time default. The override is
 kept in the browser's `localStorage`; saving the build-time defaults again removes it.
 

@@ -9,12 +9,14 @@ const FIELDS: { key: SettingsKey; label: string; numeric?: boolean }[] = [
   { key: "chainId", label: "Chain ID", numeric: true },
   { key: "oracleAddress", label: "Sentinel oracle address" },
   { key: "explorerUrl", label: "Safenet Explorer URL" },
+  { key: "sentinelInfoUrl", label: "Sentinel info URL" },
 ]
 
 const toFieldValues = (settings: AppSettings): FieldValues => ({
   chainId: String(settings.chainId),
   oracleAddress: settings.oracleAddress,
   explorerUrl: settings.explorerUrl,
+  sentinelInfoUrl: settings.sentinelInfoUrl,
 })
 
 export function SettingsDialog({
