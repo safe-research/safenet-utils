@@ -16,6 +16,11 @@ import { oracleRequestId, type SafeTransaction } from "@/lib/requestProposal"
 
 export const CONFIG = parseConfig({})
 
+// Unix timestamp of the mocked chain's block 0.
+export const GENESIS_TIMESTAMP = 1_700_000_000
+
+export const blockTimestamp = (blockNumber: number) => GENESIS_TIMESTAMP + blockNumber * 5
+
 // The mocked oracle's `PROPOSER` and `COMMIT_WINDOW`.
 export const CONSENSUS: Address = "0xC0C0c0c0C0C0c0c0c0C0c0C0C0C0C0C0C0C0c0c0"
 export const COMMIT_WINDOW = 10
@@ -122,7 +127,11 @@ function matchesFilter(log: MockLog, { address, fromBlock, toBlock, topics }: Lo
 // A Safe Apps SDK stub on a chain at `latestBlock`: `getPastLogs` returns the `logs` matching the requested filter and
 // `eth_call` answers the oracle's `getRequest` from `requests`. `txs.send` accepts every proposed transaction.
 export function mockOracleSdk(logs: MockLog[], requests: Record<Hex, RequestFixture>, latestBlock = 100) {
-  const getBlockByNumber = vi.fn(async () => ({ number: latestBlock }))
+  // Blocks are 5 seconds apart from `GENESIS_TIMESTAMP`; the timestamp is a hex quantity, as the raw RPC returns it.
+  const getBlockByNumber = vi.fn(async ([block]: [number | "latest"]) => {
+    const number = block === "latest" ? latestBlock : block
+    return { number, timestamp: `0x${blockTimestamp(number).toString(16)}` }
+  })
   // Block numbers come back as hex quantities, as the Safe{Wallet} RPC returns them despite the SDK's `number` type.
   const getPastLogs = vi.fn(async ([filter]: [LogFilter]) =>
     logs

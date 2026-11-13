@@ -1,11 +1,12 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import { Fragment, useState } from "react"
 import type { Hex } from "viem"
-import { AddressValue, HexValue } from "@/components/HexValue"
+import { HexValue } from "@/components/HexValue"
 import { RequestDetails } from "@/components/RequestDetails"
 import type { AppConfig } from "@/config/app"
 import { useArbitrationRequests } from "@/hooks/useArbitrationRequests"
-import { shorten } from "@/lib/format"
+import { formatRelativeTime, formatTimestamp, shorten } from "@/lib/format"
+import type { ArbitrationRequest, BlockTime } from "@/lib/arbitrationRequests"
 
 const COLUMN_COUNT = 4
 
@@ -39,9 +40,9 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
           <thead className="border-b border-border-subtle text-muted-foreground">
             <tr>
               <th className="py-2 font-normal">Request ID</th>
-              <th className="py-2 font-normal">Sponsor</th>
+              <th className="py-2 font-normal">In arbitration since</th>
               <th className="py-2 font-normal">Secure / Insecure</th>
-              <th className="py-2 text-right font-normal">Deadline</th>
+              <th className="py-2 text-right font-normal">Rule by</th>
             </tr>
           </thead>
           <tbody>
@@ -69,17 +70,16 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
                     <td className="py-2" title={request.requestId}>
                       <HexValue value={request.requestId} display={shorten(request.requestId)} />
                     </td>
-                    <td className="py-2" title={request.sponsor}>
-                      <AddressValue
-                        chainId={config.chainId}
-                        address={request.sponsor}
-                        display={shorten(request.sponsor)}
-                      />
+                    <td
+                      className="py-2"
+                      title={`Block ${request.disputedBlock}, ${new Date(request.disputedAt * 1000).toISOString()}`}
+                    >
+                      {formatTimestamp(request.disputedAt)}
                     </td>
                     <td className="py-2">
                       {request.approveCount} / {request.denyCount}
                     </td>
-                    <td className="py-2 text-right">block {request.arbitrationDeadline.toString()}</td>
+                    <RuleByCell request={request} latest={data.latest} />
                   </tr>
                   {isExpanded && (
                     <tr id={detailsId} className="border-b border-divider bg-subtle">
@@ -110,5 +110,24 @@ export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; conf
         </div>
       )}
     </section>
+  )
+}
+
+// The last block a ruling can be executed in, as an estimated local time and how far away it is from the `latest`
+// block; the block is shown on hover. Without an estimate, only the block is shown.
+function RuleByCell({ request, latest }: { request: ArbitrationRequest; latest: BlockTime }) {
+  const block = `block ${request.arbitrationDeadline}`
+  const estimate = request.arbitrationDeadlineAt
+  if (estimate === undefined) {
+    return <td className="py-2 text-right">{block}</td>
+  }
+  const passed = request.arbitrationDeadline < BigInt(latest.number)
+  return (
+    <td className="py-2 text-right" title={`${block}, estimated ${new Date(estimate * 1000).toISOString()}`}>
+      ~{formatTimestamp(estimate)}{" "}
+      <span className={passed ? "text-danger" : "text-muted-foreground"}>
+        ({formatRelativeTime(estimate, latest.timestamp)})
+      </span>
+    </td>
   )
 }

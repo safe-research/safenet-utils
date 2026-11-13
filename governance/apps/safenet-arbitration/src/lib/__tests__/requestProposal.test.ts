@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  blockTimestamp,
   COMMIT_WINDOW,
   CONFIG,
   CONSENSUS,
@@ -38,6 +39,7 @@ describe("fetchRequestProposal", () => {
 
     expect(proposal).toEqual({
       blockNumber: 50,
+      timestamp: blockTimestamp(50),
       transactionHash: log.transactionHash,
       epoch: 7n,
       oracleData: "0xabcd",

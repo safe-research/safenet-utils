@@ -12,7 +12,7 @@ import {
 import type { AppConfig } from "@/config/app"
 import { consensusAbi } from "@/abi/consensusAbi"
 import { sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
-import { type ArbitrationRequest, ethCall } from "@/lib/arbitrationRequests"
+import { type ArbitrationRequest, ethCall, getBlockTime } from "@/lib/arbitrationRequests"
 
 type TransactionProposedArgs = Extract<
   ReturnType<typeof decodeEventLog<typeof consensusAbi, "TransactionProposed">>,
@@ -24,6 +24,8 @@ export type SafeTransaction = TransactionProposedArgs["transaction"]
 // The `Consensus.proposeTransaction` call that posted an arbitration request to the oracle.
 export type RequestProposal = {
   blockNumber: number
+  // Unix timestamp of `blockNumber`.
+  timestamp: number
   transactionHash: Hex
   epoch: bigint
   oracleData: Hex
@@ -122,6 +124,7 @@ export async function fetchRequestProposal(
       return {
         // The searched block, rather than the log's `blockNumber`, which the SDK passes through as a raw hex quantity.
         blockNumber: block,
+        timestamp: (await getBlockTime(sdk, block)).timestamp,
         transactionHash: log.transactionHash as Hex,
         epoch: args.epoch,
         oracleData: args.oracleData,

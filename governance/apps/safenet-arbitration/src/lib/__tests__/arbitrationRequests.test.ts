@@ -1,25 +1,30 @@
 import { describe, expect, it } from "vitest"
-import { CONFIG, disputeLog, mockOracleSdk, requestId } from "@/__tests__/mock-sentinel-oracle"
+import { blockTimestamp, CONFIG, disputeLog, mockOracleSdk, requestId } from "@/__tests__/mock-sentinel-oracle"
 import { RequestState } from "@/abi/sentinelOracleAbi"
-import { fetchArbitrationRequests, openDisputeIds } from "@/lib/arbitrationRequests"
+import { estimateBlockTimestamp, fetchArbitrationRequests, openDisputes } from "@/lib/arbitrationRequests"
 
-describe("openDisputeIds", () => {
-  it("keeps triggered disputes that were never settled", () => {
+describe("openDisputes", () => {
+  it("keeps triggered disputes that were never settled, with the block they were triggered in", () => {
     const logs = [
-      disputeLog("DisputeTriggered", requestId(1)),
-      disputeLog("DisputeTriggered", requestId(2)),
-      disputeLog("DisputeTriggered", requestId(3)),
-      disputeLog("DisputeTriggered", requestId(4)),
-      disputeLog("DisputeResolved", requestId(1)),
-      disputeLog("DisputeOutOfScope", requestId(2)),
-      disputeLog("ArbitrationTimedOut", requestId(4)),
+      disputeLog("DisputeTriggered", requestId(1), 1),
+      disputeLog("DisputeTriggered", requestId(2), 2),
+      disputeLog("DisputeTriggered", requestId(3), 3),
+      disputeLog("DisputeTriggered", requestId(4), 4),
+      disputeLog("DisputeResolved", requestId(1), 5),
+      disputeLog("DisputeOutOfScope", requestId(2), 6),
+      disputeLog("ArbitrationTimedOut", requestId(4), 7),
     ]
 
-    expect(openDisputeIds(logs)).toEqual([requestId(3)])
+    expect(openDisputes(logs)).toEqual([{ requestId: requestId(3), blockNumber: 3 }])
+  })
+
+  it("accepts block numbers as hex quantities", () => {
+    const log = { ...disputeLog("DisputeTriggered", requestId(1)), blockNumber: "0x2a" as unknown as number }
+    expect(openDisputes([log])).toEqual([{ requestId: requestId(1), blockNumber: 42 }])
   })
 
   it("returns nothing without logs", () => {
-    expect(openDisputeIds([])).toEqual([])
+    expect(openDisputes([])).toEqual([])
   })
 })
 
@@ -27,11 +32,11 @@ describe("fetchArbitrationRequests", () => {
   it("returns open disputes that are still frozen on-chain, most recently disputed first", async () => {
     const { sdk } = mockOracleSdk(
       [
-        disputeLog("DisputeTriggered", requestId(1)),
-        disputeLog("DisputeTriggered", requestId(2)),
-        disputeLog("DisputeTriggered", requestId(3)),
-        disputeLog("DisputeTriggered", requestId(4)),
-        disputeLog("DisputeResolved", requestId(4)),
+        disputeLog("DisputeTriggered", requestId(1), 30),
+        disputeLog("DisputeTriggered", requestId(2), 31),
+        disputeLog("DisputeTriggered", requestId(3), 32),
+        disputeLog("DisputeTriggered", requestId(4), 33),
+        disputeLog("DisputeResolved", requestId(4), 34),
       ],
       {
         [requestId(1)]: {
@@ -66,6 +71,10 @@ describe("fetchArbitrationRequests", () => {
         approveCount: 1,
         denyCount: 4,
         arbitrationDeadline: 123n,
+        // The mocked chain has 5 second blocks, so the estimate is exact.
+        arbitrationDeadlineAt: blockTimestamp(123),
+        disputedBlock: 32,
+        disputedAt: blockTimestamp(32),
       },
       {
         requestId: requestId(1),
@@ -75,6 +84,9 @@ describe("fetchArbitrationRequests", () => {
         approveCount: 3,
         denyCount: 2,
         arbitrationDeadline: 500n,
+        arbitrationDeadlineAt: blockTimestamp(500),
+        disputedBlock: 30,
+        disputedAt: blockTimestamp(30),
       },
     ])
   })
@@ -97,9 +109,10 @@ describe("fetchArbitrationRequests", () => {
   it("searches the configured oracle's logs over the latest block range first", async () => {
     const { sdk, getPastLogs } = mockOracleSdk([], {}, 100_000)
 
-    const { fromBlock } = await fetchArbitrationRequests(sdk, CONFIG)
+    const { fromBlock, latest } = await fetchArbitrationRequests(sdk, CONFIG)
 
     expect(fromBlock).toBe(90_001)
+    expect(latest).toEqual({ number: 100_000, timestamp: blockTimestamp(100_000) })
     expect(getPastLogs).toHaveBeenCalledWith([
       expect.objectContaining({
         address: CONFIG.oracleAddress,
@@ -117,12 +130,28 @@ describe("fetchArbitrationRequests", () => {
 
     expect(fromBlock).toBe(80_001)
     expect(getPastLogs).toHaveBeenCalledWith([expect.objectContaining({ fromBlock: 80_001, toBlock: 90_000 })])
-    expect(getBlockByNumber).not.toHaveBeenCalled()
+    // Only the latest block, as the reference for deadline estimates.
+    expect(getBlockByNumber).toHaveBeenCalledExactlyOnceWith(["latest"])
   })
 
   it("stops at genesis", async () => {
     const { sdk } = mockOracleSdk([], {}, 5_000)
 
-    await expect(fetchArbitrationRequests(sdk, CONFIG)).resolves.toEqual({ requests: [], fromBlock: 0 })
+    await expect(fetchArbitrationRequests(sdk, CONFIG)).resolves.toMatchObject({ requests: [], fromBlock: 0 })
+  })
+})
+
+describe("estimateBlockTimestamp", () => {
+  const a = { number: 100, timestamp: 1_000 }
+  const b = { number: 200, timestamp: 1_600 }
+
+  it("extrapolates from the average block time of two known blocks", () => {
+    expect(estimateBlockTimestamp(300, a, b)).toBe(2_200)
+    expect(estimateBlockTimestamp(150, a, b)).toBe(1_300)
+    expect(estimateBlockTimestamp(50, b, a)).toBe(700)
+  })
+
+  it("has no estimate without two distinct blocks", () => {
+    expect(estimateBlockTimestamp(300, b, b)).toBeUndefined()
   })
 })
