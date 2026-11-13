@@ -46,7 +46,8 @@ export async function fetchRequestVotes(
       approved: args.approved,
       bondAmount: args.bondAmount,
       reason: args.reason,
-      blockNumber: log.blockNumber,
+      // The SDK passes the raw hex quantity through, despite its `number` type.
+      blockNumber: Number(log.blockNumber),
       transactionHash: log.transactionHash as Hex,
     }
   })

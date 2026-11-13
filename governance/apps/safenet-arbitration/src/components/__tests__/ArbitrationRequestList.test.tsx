@@ -9,12 +9,15 @@ import {
   mockOracleSdk,
   proposalLog,
   requestId,
+  revealedLog,
   SAFE_TRANSACTION,
 } from "@/__tests__/mock-sentinel-oracle"
 import { renderWithQueryClient } from "@/__tests__/render"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
 
 const PAGED_CONFIG = { ...CONFIG, logBlockRange: 100 }
+
+const SENTINEL = "0x6D081448c04d9ef7cf8EcF54207B1931ecc25312"
 
 describe("ArbitrationRequestList", () => {
   afterEach(cleanup)
@@ -181,6 +184,28 @@ describe("ArbitrationRequestList", () => {
       fireEvent.click(screen.getByTitle(requestId(1)))
 
       expect(await screen.findByText("Failed to load proposed transaction: rpc unavailable")).toBeDefined()
+    })
+  })
+
+  describe("sentinel votes", () => {
+    const OTHER = "0x3333333333333333333333333333333333333333"
+
+    async function renderVotes() {
+      const id = requestId(1)
+      const { sdk } = mockOracleSdk(
+        [disputeLog("DisputeTriggered", id), revealedLog(id, SENTINEL, false, "R-4.2"), revealedLog(id, OTHER, true)],
+        { [id]: { state: RequestState.FROZEN } },
+      )
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+      fireEvent.click(await screen.findByTitle(id))
+      return within(await screen.findByRole("region", { name: "Sentinel votes" }))
+    }
+
+    it("shows the block each vote was revealed in", async () => {
+      const votes = await renderVotes()
+
+      // Block numbers come back from the RPC as hex quantities, but are shown in decimal.
+      expect(votes.getAllByTitle("Revealed in block 15")).toHaveLength(2)
     })
   })
 

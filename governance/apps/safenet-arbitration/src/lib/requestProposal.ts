@@ -120,7 +120,8 @@ export async function fetchRequestProposal(
     })
     if (id === request.requestId) {
       return {
-        blockNumber: log.blockNumber,
+        // The searched block, rather than the log's `blockNumber`, which the SDK passes through as a raw hex quantity.
+        blockNumber: block,
         transactionHash: log.transactionHash as Hex,
         epoch: args.epoch,
         oracleData: args.oracleData,
