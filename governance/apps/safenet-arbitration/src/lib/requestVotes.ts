@@ -1,6 +1,6 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import { type Address, decodeEventLog, encodeEventTopics, type Hex, type Log as ViemLog } from "viem"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
 
@@ -19,7 +19,7 @@ export type SentinelVote = {
 // `commitDeadline` and up to `revealDeadline`, so that window holds every `Revealed` event of the request.
 export async function fetchRequestVotes(
   sdk: SafeAppsSDK,
-  config: OracleConfig,
+  config: AppConfig,
   request: Pick<ArbitrationRequest, "requestId" | "commitDeadline" | "revealDeadline">,
 ): Promise<SentinelVote[]> {
   const logs = await sdk.eth.getPastLogs([

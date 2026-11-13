@@ -2,10 +2,10 @@ import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import type { ReactNode } from "react"
 import { ExternalLink } from "@/components/ExternalLink"
 import { AddressValue, HexValue, SafeTxHashValue, SafeValue, TxHashValue } from "@/components/HexValue"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { useRequestProposal } from "@/hooks/useRequestProposal"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
-import { explorerBlockUrl } from "@/lib/links"
+import { explorerBlockUrl, safenetExplorerTxUrl } from "@/lib/links"
 import { truncateHex } from "@/lib/format"
 
 // `Enum.Operation` of the Safe contracts.
@@ -21,7 +21,7 @@ export function ProposalDetails({
   request,
 }: {
   sdk: SafeAppsSDK
-  config: OracleConfig
+  config: AppConfig
   request: ArbitrationRequest
 }) {
   const { data: proposal, error, isPending } = useRequestProposal(sdk, config, request)
@@ -43,6 +43,12 @@ export function ProposalDetails({
     [
       "Safe tx hash",
       <SafeTxHashValue chainId={transaction.chainId} safe={transaction.safe} safeTxHash={proposal.safeTxHash} />,
+    ],
+    [
+      "Safenet Explorer",
+      <ExternalLink href={safenetExplorerTxUrl(config.explorerUrl, transaction.chainId, proposal.safeTxHash)}>
+        View transaction
+      </ExternalLink>,
     ],
     ["Chain ID", transaction.chainId.toString()],
     ["Safe", <SafeValue chainId={transaction.chainId} safe={transaction.safe} />],

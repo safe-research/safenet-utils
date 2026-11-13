@@ -53,6 +53,14 @@ export function safeWalletTxUrl(chainId: ChainId, safe: Address, safeTxHash: Hex
   )
 }
 
+// The Safe transaction's page in the Safenet Explorer at `explorerUrl`, showing Safenet's checks of it. The explorer
+// routes by URL fragment, so only the fragment is set and `explorerUrl` (e.g. one with a path) is otherwise kept as is.
+export function safenetExplorerTxUrl(explorerUrl: string, chainId: ChainId, safeTxHash: Hex): string {
+  const url = new URL(explorerUrl)
+  url.hash = `/safeTx?safeTxHash=${safeTxHash}&chainId=${chainId}`
+  return url.toString()
+}
+
 // The Charter version SafeDAO last approved, rather than the possibly unapproved draft on `main`.
 const CHARTER_URL =
   "https://github.com/safe-research/safenet-charter/blob/latest-safedao-approved/Safenet_Arbitration_Charter.md"

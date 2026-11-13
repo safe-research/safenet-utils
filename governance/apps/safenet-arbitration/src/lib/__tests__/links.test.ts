@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { charterReasonLink } from "@/lib/links"
+import { charterReasonLink, safenetExplorerTxUrl } from "@/lib/links"
 
 const CHARTER_URL =
   "https://github.com/safe-research/safenet-charter/blob/latest-safedao-approved/Safenet_Arbitration_Charter.md"
@@ -30,5 +30,21 @@ describe("charterReasonLink", () => {
   it("has no link for an empty reason", () => {
     expect(charterReasonLink("")).toBeUndefined()
     expect(charterReasonLink("  ")).toBeUndefined()
+  })
+})
+
+describe("safenetExplorerTxUrl", () => {
+  const safeTxHash = "0xa545dcfc96b8f12f1d602fd2cc228f946cdaa0fa899f9811281476855c017b9c"
+
+  it("links the Safe transaction on its chain", () => {
+    expect(safenetExplorerTxUrl("https://safenet-explorer.eth.limo", 1n, safeTxHash)).toBe(
+      `https://safenet-explorer.eth.limo/#/safeTx?safeTxHash=${safeTxHash}&chainId=1`,
+    )
+  })
+
+  it("keeps an explorer served from a path", () => {
+    expect(safenetExplorerTxUrl("https://safe.dev/safenet/", 100, safeTxHash)).toBe(
+      `https://safe.dev/safenet/#/safeTx?safeTxHash=${safeTxHash}&chainId=100`,
+    )
   })
 })

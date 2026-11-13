@@ -9,7 +9,7 @@ import {
   hashTypedData,
   type Log as ViemLog,
 } from "viem"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { consensusAbi } from "@/abi/consensusAbi"
 import { sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
 import { type ArbitrationRequest, ethCall } from "@/lib/arbitrationRequests"
@@ -82,7 +82,7 @@ async function getCommitWindow(sdk: SafeAppsSDK, oracleAddress: Address) {
 // proposal is the one the request was posted for.
 export async function fetchRequestProposal(
   sdk: SafeAppsSDK,
-  config: OracleConfig,
+  config: AppConfig,
   request: Pick<ArbitrationRequest, "requestId" | "commitDeadline">,
 ): Promise<RequestProposal | null> {
   const [consensus, commitWindow] = await Promise.all([

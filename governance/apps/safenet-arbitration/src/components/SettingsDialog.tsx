@@ -1,7 +1,21 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react"
-import { config as defaultConfig, type OracleSettings, oracleSettingsSchema } from "@/config/oracle"
+import { config as defaultConfig, type AppSettings, appSettingsSchema } from "@/config/app"
 
-type FieldErrors = Partial<Record<keyof OracleSettings, string>>
+type SettingsKey = keyof AppSettings
+type FieldValues = Record<SettingsKey, string>
+type FieldErrors = Partial<Record<SettingsKey, string>>
+
+const FIELDS: { key: SettingsKey; label: string; numeric?: boolean }[] = [
+  { key: "chainId", label: "Chain ID", numeric: true },
+  { key: "oracleAddress", label: "Sentinel oracle address" },
+  { key: "explorerUrl", label: "Safenet Explorer URL" },
+]
+
+const toFieldValues = (settings: AppSettings): FieldValues => ({
+  chainId: String(settings.chainId),
+  oracleAddress: settings.oracleAddress,
+  explorerUrl: settings.explorerUrl,
+})
 
 export function SettingsDialog({
   activeChainId,
@@ -11,14 +25,14 @@ export function SettingsDialog({
 }: {
   // Chain of the connected Safe.
   activeChainId: number
-  settings: OracleSettings
-  onSave: (settings: OracleSettings) => void
+  settings: AppSettings
+  onSave: (settings: AppSettings) => void
   onClose: () => void
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [chainId, setChainId] = useState(String(settings.chainId))
-  const [oracleAddress, setOracleAddress] = useState<string>(settings.oracleAddress)
+  const [values, setValues] = useState(() => toFieldValues(settings))
   const [errors, setErrors] = useState<FieldErrors>({})
+  const placeholders = toFieldValues(defaultConfig)
 
   // A modal `<dialog>` traps focus and ignores clicks on its backdrop; Escape still cancels it.
   useEffect(() => {
@@ -29,11 +43,12 @@ export function SettingsDialog({
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
-    const result = oracleSettingsSchema.safeParse({ chainId: chainId.trim(), oracleAddress: oracleAddress.trim() })
+    const trimmed = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim()]))
+    const result = appSettingsSchema.safeParse(trimmed)
     if (!result.success) {
       const fieldErrors: FieldErrors = {}
       for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof OracleSettings
+        const field = issue.path[0] as SettingsKey
         fieldErrors[field] ??= issue.message
       }
       setErrors(fieldErrors)
@@ -62,40 +77,30 @@ export function SettingsDialog({
           <dd className="font-mono">Chain ID {activeChainId}</dd>
         </dl>
         <p className="mb-3 text-sm text-muted-foreground">Leave a field empty to reset it to the default.</p>
-        <Field id="settings-chain-id" label="Chain ID" error={errors.chainId}>
-          <input
-            id="settings-chain-id"
-            type="text"
-            inputMode="numeric"
-            value={chainId}
-            placeholder={String(defaultConfig.chainId)}
-            onChange={(event) => {
-              setChainId(event.target.value)
-              setErrors((current) => ({ ...current, chainId: undefined }))
-            }}
-            autoComplete="off"
-            aria-invalid={errors.chainId !== undefined}
-            aria-describedby={errors.chainId ? "settings-chain-id-error" : undefined}
-            className="w-full rounded border border-border bg-transparent p-2 font-mono text-sm"
-          />
-        </Field>
-        <Field id="settings-oracle-address" label="Sentinel oracle address" error={errors.oracleAddress}>
-          <input
-            id="settings-oracle-address"
-            type="text"
-            value={oracleAddress}
-            placeholder={defaultConfig.oracleAddress}
-            onChange={(event) => {
-              setOracleAddress(event.target.value)
-              setErrors((current) => ({ ...current, oracleAddress: undefined }))
-            }}
-            spellCheck={false}
-            autoComplete="off"
-            aria-invalid={errors.oracleAddress !== undefined}
-            aria-describedby={errors.oracleAddress ? "settings-oracle-address-error" : undefined}
-            className="w-full rounded border border-border bg-transparent p-2 font-mono text-sm"
-          />
-        </Field>
+        {FIELDS.map(({ key, label, numeric }) => {
+          const id = `settings-${key}`
+          return (
+            <Field key={key} id={id} label={label} error={errors[key]}>
+              <input
+                id={id}
+                type="text"
+                inputMode={numeric ? "numeric" : undefined}
+                value={values[key]}
+                placeholder={placeholders[key]}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setValues((current) => ({ ...current, [key]: value }))
+                  setErrors((current) => ({ ...current, [key]: undefined }))
+                }}
+                spellCheck={false}
+                autoComplete="off"
+                aria-invalid={errors[key] !== undefined}
+                aria-describedby={errors[key] ? `${id}-error` : undefined}
+                className="w-full rounded border border-border bg-transparent p-2 font-mono text-sm"
+              />
+            </Field>
+          )
+        })}
         <div className="flex justify-end gap-2">
           <button
             type="button"

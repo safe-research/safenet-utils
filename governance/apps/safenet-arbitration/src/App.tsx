@@ -3,12 +3,12 @@ import { useState } from "react"
 import { ArbitrationRequestList } from "@/components/ArbitrationRequestList"
 import { AddressChip } from "@/components/AddressChip"
 import { SettingsDialog } from "@/components/SettingsDialog"
-import { useOracleConfig } from "@/hooks/useOracleConfig"
+import { useAppConfig } from "@/hooks/useAppConfig"
 import { useSafeAppsSdk } from "@/hooks/useSafeAppsSdk"
 
 function App() {
   const { sdk, connection } = useSafeAppsSdk()
-  const { config, setSettings } = useOracleConfig()
+  const { config, setSettings } = useAppConfig()
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
@@ -39,7 +39,7 @@ function App() {
           {settingsOpen && (
             <SettingsDialog
               activeChainId={connection.safe.chainId}
-              settings={{ chainId: config.chainId, oracleAddress: config.oracleAddress }}
+              settings={config}
               onSave={setSettings}
               onClose={() => setSettingsOpen(false)}
             />

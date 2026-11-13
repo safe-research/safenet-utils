@@ -160,6 +160,21 @@ describe("ArbitrationRequestList", () => {
       expect(details().getByText("42")).toBeDefined()
     })
 
+    it("links the Safe transaction to the Safenet Explorer", async () => {
+      const { id, log } = proposalLog()
+      const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", id), log], {
+        [id]: { state: RequestState.FROZEN },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+
+      fireEvent.click(await screen.findByTitle(id))
+
+      const link = await screen.findByRole("link", { name: "View transaction" })
+      expect(link.getAttribute("href")).toBe(
+        `${CONFIG.explorerUrl}/#/safeTx?safeTxHash=0x${"5a".repeat(32)}&chainId=${SAFE_TRANSACTION.chainId}`,
+      )
+    })
+
     it("says so when no matching proposal is found", async () => {
       const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(1))], {
         [requestId(1)]: { state: RequestState.FROZEN },
