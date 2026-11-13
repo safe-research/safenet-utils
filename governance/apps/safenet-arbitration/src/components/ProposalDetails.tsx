@@ -6,7 +6,7 @@ import type { OracleConfig } from "@/config/oracle"
 import { useRequestProposal } from "@/hooks/useRequestProposal"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
 import { explorerBlockUrl, safenetExplorerTxUrl } from "@/lib/links"
-import { truncateHex } from "@/lib/format"
+import { formatTimestamp, truncateHex } from "@/lib/format"
 
 // `Enum.Operation` of the Safe contracts.
 const OPERATION_LABELS: Record<number, string> = { 0: "Call", 1: "DelegateCall" }
@@ -79,14 +79,24 @@ export function ProposalDetails({
     [
       "Proposed in",
       <>
-        block{" "}
-        <ExternalLink href={explorerBlockUrl(config.chainId, proposal.blockNumber)}>
-          {proposal.blockNumber}
-        </ExternalLink>{" "}
-        (
+        <BlockLink chainId={config.chainId} block={proposal.blockNumber} /> · {formatTimestamp(proposal.timestamp)} (
         <TxHashValue chainId={config.chainId} hash={proposal.transactionHash} />)
       </>,
     ],
+    [
+      "Rule by",
+      <>
+        <BlockLink chainId={config.chainId} block={request.arbitrationDeadline} />
+        {request.arbitrationDeadlineAt !== undefined && (
+          <span title="Estimated from the average block time">
+            {" "}
+            · ~{formatTimestamp(request.arbitrationDeadlineAt)}
+          </span>
+        )}
+      </>,
+    ],
+    // The account that proposed the transaction to Safenet: it paid the request's fee, and a ruling pays out to it.
+    ["Sponsor", <AddressValue chainId={config.chainId} address={request.sponsor} />],
   ]
 
   return (
@@ -101,5 +111,14 @@ export function ProposalDetails({
         ))}
       </dl>
     </section>
+  )
+}
+
+// "block N", with the number linked to the block explorer.
+function BlockLink({ chainId, block }: { chainId: number; block: number | bigint }) {
+  return (
+    <>
+      block <ExternalLink href={explorerBlockUrl(chainId, block)}>{block.toString()}</ExternalLink>
+    </>
   )
 }

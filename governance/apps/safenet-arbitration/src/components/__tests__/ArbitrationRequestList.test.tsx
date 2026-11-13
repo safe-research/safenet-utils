@@ -2,7 +2,9 @@ import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { encodeRuling } from "@/lib/rulings"
 import { RequestState } from "@/abi/sentinelOracleAbi"
+import { formatTimestamp } from "@/lib/format"
 import {
+  blockTimestamp,
   CONFIG,
   CONSENSUS,
   disputeLog,
@@ -47,9 +49,33 @@ describe("ArbitrationRequestList", () => {
 
     expect(screen.getByText("Loading arbitration requests…")).toBeDefined()
     const row = (await screen.findByTitle(requestId(0xabc))).closest("tr")!
-    expect(row.textContent).toContain("0x2222…2222")
     expect(row.textContent).toContain("3 / 2")
-    expect(row.textContent).toContain("block 123")
+    expect(
+      within(row).getByTitle(`block 123, estimated ${new Date(blockTimestamp(123) * 1000).toISOString()}`),
+    ).toBeDefined()
+    // Disputed in block 1 of the mocked chain; the local time is shown, the UTC time and block on hover.
+    expect(within(row).getByTitle(`Block 1, ${new Date(blockTimestamp(1) * 1000).toISOString()}`).textContent).toBe(
+      formatTimestamp(blockTimestamp(1)),
+    )
+  })
+
+  it("shows how far away the ruling deadline is, relative to the latest block", async () => {
+    // The mocked chain is at block 100, with 5 second blocks.
+    const { sdk } = mockOracleSdk(
+      [disputeLog("DisputeTriggered", requestId(1)), disputeLog("DisputeTriggered", requestId(2))],
+      {
+        [requestId(1)]: { state: RequestState.FROZEN, deadline: 100n + 720n },
+        [requestId(2)]: { state: RequestState.FROZEN, deadline: 40n },
+      },
+    )
+    renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+    const relative = (value: number, unit: Intl.RelativeTimeFormatUnit) =>
+      `(${new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(value, unit)})`
+
+    const upcoming = within((await screen.findByTitle(requestId(1))).closest("tr")!).getByText(relative(1, "hour"))
+    expect(upcoming.className).not.toContain("text-danger")
+    const passed = within(screen.getByTitle(requestId(2)).closest("tr")!).getByText(relative(-5, "minute"))
+    expect(passed.className).toContain("text-danger")
   })
 
   it("shows an empty state", async () => {
@@ -168,6 +194,39 @@ describe("ArbitrationRequestList", () => {
       expect(details().getByText("DelegateCall")).toBeDefined()
       expect(details().getByText("0xdeadbeef")).toBeDefined()
       expect(details().getByText("42")).toBeDefined()
+    })
+
+    it("shows when the transaction was proposed and the request must be ruled on", async () => {
+      // `proposalLog` proposes in block 1; the mocked chain is at block 100, with 5 second blocks.
+      const { id, log } = proposalLog()
+      const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", id), log], {
+        [id]: { state: RequestState.FROZEN, deadline: 300n },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+
+      fireEvent.click(await screen.findByTitle(id))
+      await screen.findByRole("region", { name: "Proposed transaction" })
+
+      const value = (label: string) => details().getByText(label).nextElementSibling!.textContent
+      expect(value("Proposed in")).toContain(`block 1 · ${formatTimestamp(blockTimestamp(1))}`)
+      expect(value("Rule by")).toBe(`block 300 · ~${formatTimestamp(blockTimestamp(300))}`)
+    })
+
+    it("shows the request's sponsor", async () => {
+      const sponsor = "0x2222222222222222222222222222222222222222"
+      const { id, log } = proposalLog()
+      const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", id), log], {
+        [id]: { state: RequestState.FROZEN, sponsor },
+      })
+      renderWithQueryClient(<ArbitrationRequestList sdk={sdk} config={CONFIG} />)
+
+      // Only in the details, not in the list row.
+      const row = (await screen.findByTitle(id)).closest("tr")!
+      expect(row.textContent).not.toContain("0x2222")
+      fireEvent.click(row)
+
+      expect(await screen.findByRole("region", { name: "Proposed transaction" })).toBeDefined()
+      expect(details().getByText(sponsor)).toBeDefined()
     })
 
     it("links the Safe transaction to the Safenet Explorer", async () => {

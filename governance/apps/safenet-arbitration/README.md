@@ -31,7 +31,10 @@ kept in the browser's `localStorage`; saving the build-time defaults again remov
 
 Requests awaiting arbitration are found by querying the oracle's dispute events (`DisputeTriggered` minus
 `DisputeResolved`/`DisputeOutOfScope`/`ArbitrationTimedOut`), then confirming each candidate is still `FROZEN` with
-`getRequest`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest
+`getRequest`. Each request shows when it entered arbitration: the timestamp of the block its `DisputeTriggered` was
+emitted in. **Rule by** is its `arbitrationDeadline`, the last block a ruling can be executed in (after it, anyone
+may call `timeoutArbitration`); its time is estimated from the average block time between the dispute block and the
+latest block, so it is marked with `~`. Logs are searched in pages of `VITE_LOG_BLOCK_RANGE` blocks, starting at the latest block and newest
 dispute first; **Load older** extends the search one page further back.
 
 Expanding a request shows the Safe transaction it was posted for. `Consensus.proposeTransaction` (the oracle's

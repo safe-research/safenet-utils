@@ -14,6 +14,8 @@ export function useArbitrationRequests(sdk: SafeAppsSDK, config: OracleConfig) {
     select: (data) => ({
       requests: data.pages.flatMap((page) => page.requests),
       searchedFromBlock: data.pages[data.pages.length - 1].fromBlock,
+      // The first page is fetched (and refreshed) first, so it holds the most recent head.
+      latest: data.pages[0].latest,
     }),
   })
 }
