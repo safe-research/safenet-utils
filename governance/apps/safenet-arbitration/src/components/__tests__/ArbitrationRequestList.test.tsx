@@ -107,20 +107,20 @@ describe("ArbitrationRequestList", () => {
       // Details are rendered in the row directly below the request's own row.
       const detailsOf = async (n: number) => (await row(n)).nextElementSibling as HTMLElement | null
 
-      expect(screen.queryByRole("button", { name: "Approve" })).toBeNull()
+      expect(screen.queryByRole("button", { name: "Secure" })).toBeNull()
 
       fireEvent.click(await row(2))
       expect((await row(2)).getAttribute("aria-expanded")).toBe("true")
-      expect(within((await detailsOf(2))!).getByRole("button", { name: "Approve" })).toBeDefined()
+      expect(within((await detailsOf(2))!).getByRole("button", { name: "Secure" })).toBeDefined()
 
       // Expanding another request collapses the first.
       fireEvent.click(await row(1))
-      expect(screen.getAllByRole("button", { name: "Approve" })).toHaveLength(1)
-      expect(within((await detailsOf(1))!).getByRole("button", { name: "Approve" })).toBeDefined()
+      expect(screen.getAllByRole("button", { name: "Secure" })).toHaveLength(1)
+      expect(within((await detailsOf(1))!).getByRole("button", { name: "Secure" })).toBeDefined()
       expect((await row(2)).getAttribute("aria-expanded")).toBe("false")
 
       fireEvent.click(await row(1))
-      expect(screen.queryByRole("button", { name: "Approve" })).toBeNull()
+      expect(screen.queryByRole("button", { name: "Secure" })).toBeNull()
     })
 
     it("toggles from the keyboard", async () => {
@@ -131,9 +131,9 @@ describe("ArbitrationRequestList", () => {
       const row = (await screen.findByTitle(requestId(1))).closest("tr")!
 
       fireEvent.keyDown(row, { key: "Enter" })
-      expect(screen.getByRole("button", { name: "Approve" })).toBeDefined()
+      expect(screen.getByRole("button", { name: "Secure" })).toBeDefined()
       fireEvent.keyDown(row, { key: " " })
-      expect(screen.queryByRole("button", { name: "Approve" })).toBeNull()
+      expect(screen.queryByRole("button", { name: "Secure" })).toBeNull()
     })
   })
 
@@ -170,7 +170,7 @@ describe("ArbitrationRequestList", () => {
 
       expect(await screen.findByText("No proposal matching this request was found.")).toBeDefined()
       // Rulings don't depend on the proposal details.
-      expect(screen.getByRole("button", { name: "Approve" })).toBeDefined()
+      expect(screen.getByRole("button", { name: "Secure" })).toBeDefined()
     })
 
     it("shows errors loading the proposal", async () => {
@@ -207,6 +207,14 @@ describe("ArbitrationRequestList", () => {
       // Block numbers come back from the RPC as hex quantities, but are shown in decimal.
       expect(votes.getAllByTitle("Revealed in block 15")).toHaveLength(2)
     })
+
+    it("shows each sentinel's vote", async () => {
+      const votes = await renderVotes()
+      const rowOf = (sentinel: string) => votes.getByText(sentinel).closest("tr")!.textContent
+
+      expect(rowOf(SENTINEL)).toContain("Insecure")
+      expect(rowOf(OTHER)).toContain("Secure")
+    })
   })
 
   describe("rulings", () => {
@@ -224,14 +232,14 @@ describe("ArbitrationRequestList", () => {
     }
 
     it.each([
-      ["Approve", "approve"],
-      ["Deny", "deny"],
-      ["Decline", "outOfScope"],
+      ["Secure", "approve"],
+      ["Insecure", "deny"],
+      ["Out of scope", "outOfScope"],
     ] as const)("queues a %s ruling with its rationale", async (label, ruling) => {
       const { send } = await renderFrozenRequest()
 
       fireEvent.click(screen.getByRole("button", { name: label }))
-      expect(screen.getByRole("heading", { name: `${label} ruling` })).toBeDefined()
+      expect(screen.getByRole("heading", { name: `Ruling: ${label}` })).toBeDefined()
       enterRationale("  Sentinels were right.  ")
       fireEvent.click(screen.getByRole("button", { name: "Submit to Safe" }))
 
@@ -250,7 +258,7 @@ describe("ArbitrationRequestList", () => {
     it("requires a rationale", async () => {
       await renderFrozenRequest()
 
-      fireEvent.click(screen.getByRole("button", { name: "Approve" }))
+      fireEvent.click(screen.getByRole("button", { name: "Secure" }))
       const submit = screen.getByRole("button", { name: "Submit to Safe" }) as HTMLButtonElement
       expect(submit.disabled).toBe(true)
       enterRationale("   ")
@@ -263,7 +271,7 @@ describe("ArbitrationRequestList", () => {
       const { send } = await renderFrozenRequest()
       send.mockRejectedValueOnce(new Error("Transaction was rejected"))
 
-      fireEvent.click(screen.getByRole("button", { name: "Deny" }))
+      fireEvent.click(screen.getByRole("button", { name: "Insecure" }))
       enterRationale("no")
       fireEvent.click(screen.getByRole("button", { name: "Submit to Safe" }))
 
@@ -275,7 +283,7 @@ describe("ArbitrationRequestList", () => {
     it("closes the form on cancel", async () => {
       const { send } = await renderFrozenRequest()
 
-      fireEvent.click(screen.getByRole("button", { name: "Approve" }))
+      fireEvent.click(screen.getByRole("button", { name: "Secure" }))
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
       expect(screen.queryByLabelText("Rationale (recorded on-chain)")).toBeNull()

@@ -35,8 +35,8 @@ if its recomputed attestation message equals the request ID.
 
 ## Ruling
 
-Clicking a listed request expands it, offering **Approve** / **Deny** (`resolveDispute`, siding with the approving or
-denying sentinels) and **Decline** (`markOutOfScope`, refusing to rule). Picking one asks for a rationale, recorded on-chain as the call's
+Clicking a listed request expands it, offering **Secure** / **Insecure** (`resolveDispute`, siding with the
+approving or denying sentinels) and **Out of scope** (`markOutOfScope`, refusing to rule). Picking one asks for a rationale, recorded on-chain as the call's
 `context`, and **Submit to Safe** proposes the call as a Safe transaction. The app stops there: each owner's
 confirmation in Safe{Wallet}'s transaction queue is their vote, and the ruling takes effect once the transaction is
 executed. The request then drops off the list on the next refresh.

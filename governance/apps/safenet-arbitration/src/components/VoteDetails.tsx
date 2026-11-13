@@ -51,7 +51,7 @@ export function VoteDetails({
                   />
                 </td>
                 <td className={`py-1 pr-4 ${vote.approved ? "text-success" : "text-danger"}`}>
-                  {vote.approved ? "Approve" : "Deny"}
+                  {vote.approved ? "Secure" : "Insecure"}
                 </td>
                 <td className="py-1 break-all">
                   <VoteReason reason={vote.reason} />
