@@ -1,7 +1,7 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react"
-import { config as defaultConfig, type OracleSettings, oracleSettingsSchema } from "@/config/oracle"
+import { config as defaultConfig, type AppSettings, appSettingsSchema } from "@/config/app"
 
-type SettingsKey = keyof OracleSettings
+type SettingsKey = keyof AppSettings
 type FieldValues = Record<SettingsKey, string>
 type FieldErrors = Partial<Record<SettingsKey, string>>
 
@@ -11,7 +11,7 @@ const FIELDS: { key: SettingsKey; label: string; numeric?: boolean }[] = [
   { key: "explorerUrl", label: "Safenet Explorer URL" },
 ]
 
-const toFieldValues = (settings: OracleSettings): FieldValues => ({
+const toFieldValues = (settings: AppSettings): FieldValues => ({
   chainId: String(settings.chainId),
   oracleAddress: settings.oracleAddress,
   explorerUrl: settings.explorerUrl,
@@ -25,8 +25,8 @@ export function SettingsDialog({
 }: {
   // Chain of the connected Safe.
   activeChainId: number
-  settings: OracleSettings
-  onSave: (settings: OracleSettings) => void
+  settings: AppSettings
+  onSave: (settings: AppSettings) => void
   onClose: () => void
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -44,7 +44,7 @@ export function SettingsDialog({
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
     const trimmed = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim()]))
-    const result = oracleSettingsSchema.safeParse(trimmed)
+    const result = appSettingsSchema.safeParse(trimmed)
     if (!result.success) {
       const fieldErrors: FieldErrors = {}
       for (const issue of result.error.issues) {

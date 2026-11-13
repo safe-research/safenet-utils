@@ -1,7 +1,7 @@
 import { type Address, getAddress, isAddress } from "viem"
 import { type ZodType, z } from "zod"
 
-export type OracleConfig = {
+export type AppConfig = {
   chainId: number
   oracleAddress: Address
   logBlockRange: number
@@ -34,7 +34,7 @@ const envSchema = z.object({
   VITE_SAFENET_EXPLORER_URL: emptyToDefault(httpUrlSchema, "https://safenet-explorer.eth.limo"),
 })
 
-export function parseConfig(env: Record<string, unknown>): OracleConfig {
+export function parseConfig(env: Record<string, unknown>): AppConfig {
   const result = envSchema.safeParse(env)
   if (!result.success) {
     throw new Error(`Invalid app config:\n${z.prettifyError(result.error)}`)
@@ -51,10 +51,10 @@ export const config = parseConfig(import.meta.env)
 
 // The part of the config that can be overridden at runtime from the settings dialog; empty values reset to the
 // build-time config. Missing values do too, so overrides stored before a setting existed still parse.
-export const oracleSettingsSchema = z.object({
+export const appSettingsSchema = z.object({
   chainId: emptyToDefault(chainIdSchema, config.chainId),
   oracleAddress: emptyToDefault(checkedAddressSchema, config.oracleAddress),
   explorerUrl: emptyToDefault(httpUrlSchema, config.explorerUrl),
 })
 
-export type OracleSettings = z.infer<typeof oracleSettingsSchema>
+export type AppSettings = z.infer<typeof appSettingsSchema>

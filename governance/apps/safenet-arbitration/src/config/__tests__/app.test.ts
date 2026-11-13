@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseConfig } from "../oracle"
+import { parseConfig } from "../app"
 
 describe("parseConfig", () => {
   it("defaults to the Safenet production oracle", () => {

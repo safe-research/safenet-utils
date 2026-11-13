@@ -9,7 +9,7 @@ import {
   type Hex,
 } from "viem"
 import { vi } from "vitest"
-import { parseConfig } from "@/config/oracle"
+import { parseConfig } from "@/config/app"
 import { consensusAbi } from "@/abi/consensusAbi"
 import { RequestState, sentinelOracleAbi } from "@/abi/sentinelOracleAbi"
 import { oracleRequestId, type SafeTransaction } from "@/lib/requestProposal"

@@ -1,7 +1,7 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
 import { type FormEvent, useState } from "react"
 import type { Hex } from "viem"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { useSubmitRuling } from "@/hooks/useSubmitRuling"
 import { shorten } from "@/lib/format"
 import { RULING_COLORS, RULING_LABELS, type Ruling } from "@/lib/rulings"
@@ -14,7 +14,7 @@ export function RulingForm({
   onClose,
 }: {
   sdk: SafeAppsSDK
-  config: OracleConfig
+  config: AppConfig
   requestId: Hex
   ruling: Ruling
   onClose: () => void
