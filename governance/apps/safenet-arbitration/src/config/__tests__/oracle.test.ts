@@ -34,8 +34,7 @@ describe("parseConfig", () => {
       chainId: 11155111,
       oracleAddress: "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD",
       logBlockRange: 500,
-      // Trailing slashes are dropped, so paths can be appended.
-      explorerUrl: "http://localhost:8080",
+      explorerUrl: "http://localhost:8080/",
     })
   })
 

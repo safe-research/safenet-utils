@@ -24,8 +24,6 @@ const chainIdSchema = z.coerce.number().int().positive()
 
 // Only http(s) URLs, since the value is used as a link target.
 const httpUrlSchema = z.url({ protocol: /^https?$/ })
-// Without trailing slashes, so paths can be appended.
-const baseUrlSchema = httpUrlSchema.transform((url) => url.replace(/\/+$/, ""))
 
 // Defaults point at the Safenet production (Aegis Network, Gnosis Chain) `SentinelOracle` and the public Safenet
 // Explorer; keep in sync with `.env.sample`.
@@ -33,7 +31,7 @@ const envSchema = z.object({
   VITE_CHAIN_ID: emptyToDefault(chainIdSchema, "100"),
   VITE_SENTINEL_ORACLE_ADDRESS: emptyToDefault(checkedAddressSchema, "0x4F61B8832978e83b80D69551AEf07557DBE41d03"),
   VITE_LOG_BLOCK_RANGE: emptyToDefault(z.coerce.number().int().positive(), "10000"),
-  VITE_SAFENET_EXPLORER_URL: emptyToDefault(baseUrlSchema, "https://safenet-explorer.eth.limo"),
+  VITE_SAFENET_EXPLORER_URL: emptyToDefault(httpUrlSchema, "https://safenet-explorer.eth.limo"),
 })
 
 export function parseConfig(env: Record<string, unknown>): OracleConfig {
@@ -56,7 +54,7 @@ export const config = parseConfig(import.meta.env)
 export const oracleSettingsSchema = z.object({
   chainId: emptyToDefault(chainIdSchema, config.chainId),
   oracleAddress: emptyToDefault(checkedAddressSchema, config.oracleAddress),
-  explorerUrl: emptyToDefault(baseUrlSchema, config.explorerUrl),
+  explorerUrl: emptyToDefault(httpUrlSchema, config.explorerUrl),
 })
 
 export type OracleSettings = z.infer<typeof oracleSettingsSchema>
