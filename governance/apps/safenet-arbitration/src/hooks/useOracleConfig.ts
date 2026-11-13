@@ -3,7 +3,14 @@ import { config as defaultConfig, type OracleConfig, type OracleSettings, oracle
 
 const STORAGE_KEY = "safenet-arbitration:oracleSettings"
 
-const defaultSettings: OracleSettings = { chainId: defaultConfig.chainId, oracleAddress: defaultConfig.oracleAddress }
+const defaultSettings: OracleSettings = {
+  chainId: defaultConfig.chainId,
+  oracleAddress: defaultConfig.oracleAddress,
+  explorerUrl: defaultConfig.explorerUrl,
+}
+
+const isDefault = (settings: OracleSettings) =>
+  (Object.keys(defaultSettings) as (keyof OracleSettings)[]).every((key) => settings[key] === defaultSettings[key])
 
 // Storage can be unavailable (e.g. blocked third-party storage for the Safe App's iframe) or hold a stale or
 // tampered value, so anything that doesn't parse falls back to the build-time default.
@@ -23,7 +30,7 @@ function loadSettings(): OracleSettings {
 function storeSettings(settings: OracleSettings) {
   try {
     // Only persist actual overrides, so a later change of the build-time default isn't shadowed by a stale copy.
-    if (settings.chainId === defaultSettings.chainId && settings.oracleAddress === defaultSettings.oracleAddress) {
+    if (isDefault(settings)) {
       localStorage.removeItem(STORAGE_KEY)
     } else {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
@@ -34,7 +41,7 @@ function storeSettings(settings: OracleSettings) {
   }
 }
 
-// The build-time config, with the chain ID and oracle address optionally overridden from the settings dialog.
+// The build-time config, with the settings dialog's fields (chain ID, oracle address, URLs) optionally overridden.
 export function useOracleConfig(): { config: OracleConfig; setSettings: (settings: OracleSettings) => void } {
   const [settings, setSettingsState] = useState(loadSettings)
 

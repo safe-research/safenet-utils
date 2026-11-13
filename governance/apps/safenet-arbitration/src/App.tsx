@@ -39,7 +39,7 @@ function App() {
           {settingsOpen && (
             <SettingsDialog
               activeChainId={connection.safe.chainId}
-              settings={{ chainId: config.chainId, oracleAddress: config.oracleAddress }}
+              settings={config}
               onSave={setSettings}
               onClose={() => setSettingsOpen(false)}
             />

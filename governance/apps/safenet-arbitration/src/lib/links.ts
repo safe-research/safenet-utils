@@ -53,6 +53,11 @@ export function safeWalletTxUrl(chainId: ChainId, safe: Address, safeTxHash: Hex
   )
 }
 
+// The Safe transaction's page in the Safenet Explorer at `explorerUrl`, showing Safenet's checks of it.
+export function safenetExplorerTxUrl(explorerUrl: string, chainId: ChainId, safeTxHash: Hex): string {
+  return `${explorerUrl}/#/safeTx?safeTxHash=${safeTxHash}&chainId=${chainId}`
+}
+
 // The Charter version SafeDAO last approved, rather than the possibly unapproved draft on `main`.
 const CHARTER_URL =
   "https://github.com/safe-research/safenet-charter/blob/latest-safedao-approved/Safenet_Arbitration_Charter.md"

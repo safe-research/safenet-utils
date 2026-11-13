@@ -19,7 +19,10 @@ The `SentinelOracle` to operate on is fixed at build time through Vite environme
 ([configuration](https://github.com/safe-research/safenet/blob/main/docs/configuration.md)); copy
 the file to `.env` to point the app at a different deployment.
 
-The chain ID and oracle address can also be overridden at runtime from the settings dialog (the cog next to the
+The same variables set the [Safenet Explorer](https://safenet-explorer.eth.limo) that each request's Safe transaction
+links to.
+
+The chain ID, oracle address and Safenet Explorer URL can also be overridden at runtime from the settings dialog (the cog next to the
 headline, shown once connected to Safe{Wallet}). Leaving a field empty resets it to its build-time default. The override is
 kept in the browser's `localStorage`; saving the build-time defaults again removes it.
 
