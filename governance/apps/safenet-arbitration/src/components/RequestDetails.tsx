@@ -3,7 +3,7 @@ import { useState } from "react"
 import { ProposalDetails } from "@/components/ProposalDetails"
 import { RulingForm } from "@/components/RulingForm"
 import { VoteDetails } from "@/components/VoteDetails"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import type { ArbitrationRequest } from "@/lib/arbitrationRequests"
 import { RULING_COLORS, RULING_LABELS, RULINGS, type Ruling } from "@/lib/rulings"
 
@@ -15,7 +15,7 @@ export function RequestDetails({
   request,
 }: {
   sdk: SafeAppsSDK
-  config: OracleConfig
+  config: AppConfig
   request: ArbitrationRequest
 }) {
   const [ruling, setRuling] = useState<Ruling>()

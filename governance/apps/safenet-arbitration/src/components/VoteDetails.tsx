@@ -1,5 +1,5 @@
 import type SafeAppsSDK from "@safe-global/safe-apps-sdk"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { useRequestVotes } from "@/hooks/useRequestVotes"
 import { useSentinelLabels } from "@/hooks/useSentinelLabels"
 import { ExternalLink } from "@/components/ExternalLink"
@@ -15,7 +15,7 @@ export function VoteDetails({
   request,
 }: {
   sdk: SafeAppsSDK
-  config: OracleConfig
+  config: AppConfig
   request: ArbitrationRequest
 }) {
   const { data: votes, error, isPending } = useRequestVotes(sdk, config, request)

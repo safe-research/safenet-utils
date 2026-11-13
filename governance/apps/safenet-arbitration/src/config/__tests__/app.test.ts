@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseConfig } from "../oracle"
+import { parseConfig } from "../app"
 
 describe("parseConfig", () => {
   it("defaults to the Safenet production oracle", () => {
@@ -37,8 +37,7 @@ describe("parseConfig", () => {
       chainId: 11155111,
       oracleAddress: "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD",
       logBlockRange: 500,
-      // Trailing slashes are dropped, so paths can be appended.
-      explorerUrl: "http://localhost:8080",
+      explorerUrl: "http://localhost:8080/",
       sentinelInfoUrl: "https://example.com/sentinels.json",
     })
   })

@@ -3,13 +3,13 @@ import { Fragment, useState } from "react"
 import type { Hex } from "viem"
 import { AddressValue, HexValue } from "@/components/HexValue"
 import { RequestDetails } from "@/components/RequestDetails"
-import type { OracleConfig } from "@/config/oracle"
+import type { AppConfig } from "@/config/app"
 import { useArbitrationRequests } from "@/hooks/useArbitrationRequests"
 import { shorten } from "@/lib/format"
 
 const COLUMN_COUNT = 4
 
-export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; config: OracleConfig }) {
+export function ArbitrationRequestList({ sdk, config }: { sdk: SafeAppsSDK; config: AppConfig }) {
   const { data, error, isPending, isFetching, refetch, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useArbitrationRequests(sdk, config)
   const requests = data?.requests
