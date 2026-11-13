@@ -7,6 +7,7 @@ const defaultSettings: OracleSettings = {
   chainId: defaultConfig.chainId,
   oracleAddress: defaultConfig.oracleAddress,
   explorerUrl: defaultConfig.explorerUrl,
+  sentinelInfoUrl: defaultConfig.sentinelInfoUrl,
 }
 
 const isDefault = (settings: OracleSettings) =>

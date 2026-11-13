@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { encodeRuling } from "@/lib/rulings"
 import { RequestState } from "@/abi/sentinelOracleAbi"
 import {
@@ -20,7 +20,17 @@ const PAGED_CONFIG = { ...CONFIG, logBlockRange: 100 }
 const SENTINEL = "0x6D081448c04d9ef7cf8EcF54207B1931ecc25312"
 
 describe("ArbitrationRequestList", () => {
-  afterEach(cleanup)
+  // The sentinel list is fetched from `CONFIG.sentinelInfoUrl` whenever a request's votes are shown.
+  const fetchSentinelInfo = vi.fn(async () => Response.json([{ address: SENTINEL, label: "Candide" }]))
+
+  beforeEach(() => {
+    vi.stubGlobal("fetch", fetchSentinelInfo)
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
 
   it("lists requests awaiting arbitration", async () => {
     const { sdk } = mockOracleSdk([disputeLog("DisputeTriggered", requestId(0xabc))], {
@@ -229,6 +239,24 @@ describe("ArbitrationRequestList", () => {
 
       expect(rowOf(SENTINEL)).toContain("Insecure")
       expect(rowOf(OTHER)).toContain("Secure")
+    })
+
+    it("names sentinels from the sentinel list", async () => {
+      const votes = await renderVotes()
+
+      expect(await votes.findByText("Candide")).toBeDefined()
+      expect(fetchSentinelInfo).toHaveBeenCalledWith(CONFIG.sentinelInfoUrl)
+      // Sentinels missing from the list are still shown by address.
+      expect(votes.getByText(OTHER)).toBeDefined()
+    })
+
+    it("still shows the votes when the sentinel list fails to load", async () => {
+      fetchSentinelInfo.mockResolvedValueOnce(new Response("", { status: 503 }))
+      const votes = await renderVotes()
+
+      expect(await votes.findByText("Sentinel names unavailable: HTTP 503")).toBeDefined()
+      expect(votes.getByText(SENTINEL)).toBeDefined()
+      expect(votes.queryByText("Candide")).toBeNull()
     })
   })
 

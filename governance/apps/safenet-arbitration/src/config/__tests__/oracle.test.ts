@@ -8,6 +8,7 @@ describe("parseConfig", () => {
       oracleAddress: "0x4F61B8832978e83b80D69551AEf07557DBE41d03",
       logBlockRange: 10000,
       explorerUrl: "https://safenet-explorer.eth.limo",
+      sentinelInfoUrl: "https://raw.githubusercontent.com/safe-fndn/safenet-data/main/assets/sentinel-info.json",
     })
   })
 
@@ -18,6 +19,7 @@ describe("parseConfig", () => {
         VITE_SENTINEL_ORACLE_ADDRESS: "",
         VITE_LOG_BLOCK_RANGE: "",
         VITE_SAFENET_EXPLORER_URL: "",
+        VITE_SENTINEL_INFO_URL: "",
       }),
     ).toEqual(parseConfig({}))
   })
@@ -29,6 +31,7 @@ describe("parseConfig", () => {
         VITE_SENTINEL_ORACLE_ADDRESS: "0xABcdEFABcdEFabcdEfAbCdefabcdeFABcDEFabCD",
         VITE_LOG_BLOCK_RANGE: "500",
         VITE_SAFENET_EXPLORER_URL: "http://localhost:8080/",
+        VITE_SENTINEL_INFO_URL: "https://example.com/sentinels.json",
       }),
     ).toEqual({
       chainId: 11155111,
@@ -36,6 +39,7 @@ describe("parseConfig", () => {
       logBlockRange: 500,
       // Trailing slashes are dropped, so paths can be appended.
       explorerUrl: "http://localhost:8080",
+      sentinelInfoUrl: "https://example.com/sentinels.json",
     })
   })
 
@@ -47,8 +51,9 @@ describe("parseConfig", () => {
     expect(() => parseConfig({ VITE_SAFENET_EXPLORER_URL: "safenet-explorer.eth.limo" })).toThrow(
       "VITE_SAFENET_EXPLORER_URL",
     )
-    // Only http(s), as the URL becomes a link target.
+    // Only http(s), as the URLs become link targets and are fetched.
     expect(() => parseConfig({ VITE_SAFENET_EXPLORER_URL: "javascript:alert(1)" })).toThrow("VITE_SAFENET_EXPLORER_URL")
+    expect(() => parseConfig({ VITE_SENTINEL_INFO_URL: "file:///etc/passwd" })).toThrow("VITE_SENTINEL_INFO_URL")
     // Addresses must be checksummed, so a typo can't slip through as an all-lowercase address.
     expect(() => parseConfig({ VITE_SENTINEL_ORACLE_ADDRESS: "0x544f12bad6ff72564abbc7ea6494a2a4bdd0ddd0" })).toThrow(
       "VITE_SENTINEL_ORACLE_ADDRESS",
